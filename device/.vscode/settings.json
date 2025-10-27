@@ -1,0 +1,41 @@
+{
+  // 🔧 Пути к SDK и ядру Arduino/ESP8266
+  "C_Cpp.default.includePath": [
+    "${workspaceFolder}/**",
+    "C:/.platformio/packages/framework-arduinoespressif8266/cores/esp8266",
+    "C:/.platformio/packages/framework-arduinoespressif8266/libraries",
+    "C:/.platformio/packages/framework-arduinoespressif8266/variants/nodemcu",
+    "C:/.platformio/packages/toolchain-xtensa/include"
+  ],
+
+  // 🔍 IntelliSense и компилятор
+  "C_Cpp.default.defines": ["PLATFORMIO=1"],
+  "C_Cpp.default.compilerPath": "C:/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-gcc.exe",
+  "C_Cpp.default.intelliSenseMode": "gcc-x64",
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.default.cStandard": "c11",
+
+  // 💡 Чтобы PlatformIO управлял IntelliSense, а не Microsoft
+  "C_Cpp.intelliSenseEngine": "Tag Parser",
+  "C_Cpp.errorSquiggles": "Disabled",
+
+  // 🧠 Автоформатирование и стили
+  "editor.formatOnSave": true,
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+  "[c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+
+  // 🧹 Игнорировать внутренние каталоги PlatformIO
+  "files.exclude": {
+    "**/.pio": true,
+    "**/.vscode": false
+  },
+
+  // 🚀 PlatformIO интеграция
+  "platformio-ide.buildTask": "PlatformIO: Build",
+  "platformio-ide.uploadTask": "PlatformIO: Upload",
+  "platformio-ide.deviceMonitorBaud": 115200
+}

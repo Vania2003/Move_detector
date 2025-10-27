@@ -1,0 +1,24 @@
+{
+  "configurations": [
+    {
+      "name": "PlatformIO",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "C:/.platformio/packages/framework-arduinoespressif8266/cores/esp8266",
+        "C:/.platformio/packages/framework-arduinoespressif8266/libraries",
+        "C:/.platformio/packages/framework-arduinoespressif8266/variants/nodemcu",
+        "C:/.platformio/packages/toolchain-xtensa/xtensa-lx106-elf/include",
+        "C:/.platformio/packages/toolchain-xtensa/lib/gcc/xtensa-lx106-elf/10.2.0/include"
+      ],
+      "defines": [
+        "PLATFORMIO=1",
+        "ESP8266"
+      ],
+      "compilerPath": "C:/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-gcc.exe",
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "gcc-x64"
+    }
+  ],
+  "version": 4
+}
