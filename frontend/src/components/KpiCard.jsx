@@ -1,14 +1,19 @@
-import React from 'react';
+import React from "react";
 
-// универсальная KPI карточка с поддержкой иконок и hint
-export default function KpiCard({ title, value, icon: Icon, hint, color = 'indigo' }) {
+// icon: React component (например, FiBell), color: "emerald", "red", "blue", count: число, hint: подзаголовок
+export default function KpiCard({ icon: Icon, label, value, color = "indigo", hint, children }) {
+  const bgColor = `bg-${color}-50 dark:bg-${color}-950/60`;
+  const borderColor = `border-${color}-200 dark:border-${color}-800`;
+  const textColor = `text-${color}-800 dark:text-${color}-200`;
   return (
-    <div className={`rounded-2xl border border-${color}-800 p-5 flex flex-col gap-1 bg-${color}-950/50 shadow-lg`}>
-      <div className={`flex items-center gap-2 text-xs text-${color}-300 font-medium`}>
-        {Icon && <Icon size={22} className={`text-${color}-400`} />} {title}
+    <div className={`card flex flex-col gap-1 items-start justify-between min-w-[140px] w-full ${bgColor} ${borderColor} ${textColor}`}>
+      <div className="flex items-center gap-2 text-xs font-semibold">
+        {Icon && <Icon size={20} className={`text-${color}-400`} />}
+        {label}
       </div>
-      <div className="mt-2 text-3xl font-bold tracking-tight text-zinc-100">{value}</div>
-      {hint && <div className="text-xs text-zinc-400 mt-1">{hint}</div>}
+      <div className="mt-1 text-3xl font-extrabold">{value}</div>
+      {hint && <div className="mt-1 text-xs text-zinc-400">{hint}</div>}
+      {children && <div className="w-full mt-2">{children}</div>}
     </div>
   );
 }

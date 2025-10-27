@@ -1,7 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: 'class',            
-  content: ['./index.html','./src/**/*.{js,jsx,ts,tsx}'],
+  content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: { extend: {} },
   plugins: [],
-}
+  safelist: [
+    { pattern: /(bg|text|border)-(red|emerald|blue|indigo)-(50|200|400|700|900)/ }
+  ]
+};
