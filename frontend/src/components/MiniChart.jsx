@@ -1,6 +1,5 @@
 import React from "react";
 
-// values — массив от 0 до 1, интерпретируется как интенсивность
 export default function MiniChart({ values = [], height = 32, color = "indigo" }) {
   return (
     <svg width={values.length * 6} height={height}>

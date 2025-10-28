@@ -10,7 +10,7 @@ static PirConfig s_cfg;
 
 void pirBegin(const PirConfig& cfg) {
   s_cfg = cfg;
-  pinMode(cfg.pin, INPUT); // HC-SR501/AM312 без pullup
+  pinMode(cfg.pin, INPUT);
   s_lastLevel = false;
   s_lastEdgeMs = 0;
   s_lowSinceMs = 0;
@@ -20,7 +20,6 @@ void pirBegin(const PirConfig& cfg) {
 
 bool pirPoll(const PirConfig& cfg, unsigned long now,
              bool& level, bool& isEdge, bool& rising) {
-  // прогрев
   if (now - s_bootMs < cfg.warmupMs) {
     isEdge = false; rising = false; level = false;
     return false;
@@ -28,7 +27,6 @@ bool pirPoll(const PirConfig& cfg, unsigned long now,
 
   level = digitalRead(cfg.pin);
 
-  // считаем стабильный LOW
   if (!level) {
     if (s_lowSinceMs == 0) s_lowSinceMs = now;
     if (now - s_lowSinceMs >= cfg.needLowMs) s_allowNextTrue = true;
@@ -36,14 +34,13 @@ bool pirPoll(const PirConfig& cfg, unsigned long now,
     s_lowSinceMs = 0;
   }
 
-  // детект фронтов со стабильностью (debounce)
   isEdge = (level != s_lastLevel) && (now - s_lastEdgeMs > cfg.edgeDebounceMs);
   rising = isEdge && level;
 
   if (isEdge) {
     s_lastEdgeMs = now;
     if (rising) {
-      if (!s_allowNextTrue) { // игнорируем ложные повторные HIGH
+      if (!s_allowNextTrue) {
         isEdge = false;
         rising = false;
       } else {
@@ -53,5 +50,5 @@ bool pirPoll(const PirConfig& cfg, unsigned long now,
     s_lastLevel = level;
   }
 
-  return true; // поллинг выполнен
+  return true;
 }

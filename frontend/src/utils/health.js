@@ -1,6 +1,5 @@
 export const isUp = (lastHbIso, minutes = 30) => {
   if (!lastHbIso) return false;
-  // сервер может прислать 'YYYY-MM-DD HH:MM:SS' — превращаем в ISO
   const t = new Date(String(lastHbIso).replace(' ', 'T'));
   if (isNaN(t.getTime())) return false;
   return (Date.now() - t.getTime()) <= minutes * 60 * 1000;

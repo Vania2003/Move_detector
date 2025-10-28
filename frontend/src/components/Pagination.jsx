@@ -39,7 +39,6 @@ export default function Pagination({ page, pageSize, total, setPage }) {
       )
     )}
 
-    {/* Next */}
     <button
       onClick={() => go(page + 1)}
       disabled={page === pages}

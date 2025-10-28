@@ -1,15 +1,9 @@
 import React from "react";
 import { FiX } from "react-icons/fi";
 
-/**
- * Боковая панель с гарантированным тёмным фоном в dark-режиме.
- * Используем data-атрибут [data-drawer] и .drawer-header, чтобы
- * CSS-оверрайд мог уверенно перебить любые старые стили.
- */
 export default function Drawer({ open, onClose, title, children, width = 420 }) {
   return (
     <>
-      {/* Backdrop с лёгким блюром */}
       <div
         onClick={onClose}
         className={`fixed inset-0 z-40 transition-opacity duration-300
@@ -17,7 +11,6 @@ export default function Drawer({ open, onClose, title, children, width = 420 }) 
                     ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
       />
 
-      {/* Панель */}
       <aside
         data-drawer=""
         className={`fixed top-0 right-0 h-full z-50 transition-transform duration-300 shadow-xl
@@ -28,7 +21,6 @@ export default function Drawer({ open, onClose, title, children, width = 420 }) 
           transform: open ? "translateX(0)" : `translateX(${width}px)`,
         }}
       >
-        {/* Заголовок */}
         <div
           className="drawer-header sticky top-0 z-10 px-5 py-3 border-b
                      bg-zinc-50/95 dark:bg-zinc-900/95
@@ -50,7 +42,6 @@ export default function Drawer({ open, onClose, title, children, width = 420 }) 
           </div>
         </div>
 
-        {/* Контент */}
         <div className="p-5 h-[calc(100%-56px)] overflow-auto bg-transparent">
           {children}
         </div>

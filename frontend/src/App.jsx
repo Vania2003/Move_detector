@@ -44,7 +44,6 @@ export default function App() {
       localStorage.setItem('theme_dark', '0');
     }
   }, [dark]);
-  // ThemeToggle теперь получает dark/setDark как пропсы
   return (
     <ToastProvider>
       <BrowserRouter>
@@ -89,7 +88,6 @@ export default function App() {
   );
 }
 
-// ThemeToggle обновленный — принимает dark/setDark
 function ThemeToggle({ dark, setDark }) {
   return (
     <button onClick={() => setDark(d => !d)}>

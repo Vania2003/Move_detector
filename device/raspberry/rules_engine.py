@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 
 DB_PATH = "/home/pi/DYPLOM/device/raspberry/events.db"
-CHECK_INTERVAL = 15  # seconds between rule checks
+CHECK_INTERVAL = 15
 
 
 def now_utc():

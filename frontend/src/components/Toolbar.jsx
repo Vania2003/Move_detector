@@ -38,9 +38,7 @@ export default function Toolbar({ alertsOpen, apiStatus, onThemeToggle, dark }) 
           )}
         </nav>
         <div className="flex items-center gap-2">
-          {/* API Status Indicator */}
           <ApiStatusIndicator status={apiStatus} />
-          {/* Theme Switcher */}
           <button
             className="ml-2 p-2 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-300 dark:border-zinc-700 text-sm transition"
             onClick={onThemeToggle}

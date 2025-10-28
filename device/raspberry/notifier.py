@@ -7,7 +7,7 @@ from datetime import datetime
 from email.mime.text import MIMEText
 
 DB_PATH = "/home/pi/DYPLOM/device/raspberry/events.db"
-CHECK_INTERVAL = 60  # seconds
+CHECK_INTERVAL = 60
 
 def log(msg):
     """Print log message with timestamp (visible in journalctl)."""

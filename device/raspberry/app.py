@@ -7,7 +7,6 @@ DB_PATH = "/home/pi/DYPLOM/device/raspberry/events.db"
 app = Flask(__name__)
 API_TOKEN = os.getenv("API_TOKEN", "").strip()
 
-# ---------- Utils ----------
 
 def now_iso():
     return datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -20,7 +19,6 @@ def row_query(query, args=(), one=False):
     con.close()
     return (rows[0] if rows else None) if one else rows
 
-# оставляем для совместимости (возвращает lastrowid, как раньше)
 def exec_query(query, args=()):
     con = sqlite3.connect(DB_PATH)
     cur = con.execute(query, args)
@@ -29,7 +27,6 @@ def exec_query(query, args=()):
     con.close()
     return last_id
 
-# корректная запись с количеством затронутых строк
 def exec_write(query, args=()):
     con = sqlite3.connect(DB_PATH)
     cur = con.execute(query, args)
@@ -41,7 +38,7 @@ def exec_write(query, args=()):
 
 def require_token():
     if not API_TOKEN:
-        return  # открытый режим
+        return 
     hdr = request.headers.get("Authorization", "")
     key = request.headers.get("X-API-Key", "")
     token = ""
@@ -58,8 +55,6 @@ def add_cors(resp):
     resp.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, X-API-Key"
     resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, OPTIONS"
     return resp
-
-# ---------- Routes ----------
 
 @app.route("/", methods=["GET"])
 def root():
@@ -110,10 +105,10 @@ def get_devices():
 @app.route("/api/alerts", methods=["GET"])
 def get_alerts():
     require_token()
-    status = request.args.get("status")             # 'open' | 'closed' | None
-    room_contains = request.args.get("room")        # подстрока (LIKE)
-    a_type = request.args.get("type")               # точное совпадение
-    since = request.args.get("since")               # 'YYYY-MM-DD HH:MM:SS' или 'YYYY-MM-DDTHH:MM:SS'
+    status = request.args.get("status")          
+    room_contains = request.args.get("room")     
+    a_type = request.args.get("type")            
+    since = request.args.get("since")            
     last_minutes = request.args.get("last_minutes", type=int) or 0
     limit = int(request.args.get("limit", 500))
 
@@ -177,8 +172,6 @@ def close_alert(alert_id):
     )
     return jsonify({"ok": True, "updated": affected > 0})
 
-# ---------- Extra: rule_settings ----------
-
 @app.route("/api/rule-settings", methods=["GET"])
 def get_rule_settings():
     require_token()
@@ -209,14 +202,12 @@ def upsert_rule_settings():
     con.close()
     return jsonify({"ok": True, "updated": len(payload)})
 
-# ---------- Extra: bulk close alerts ----------
-
 @app.post("/api/alerts/close-bulk")
 def close_bulk():
     require_token()
-    status = request.args.get("status", "open")              # фильтр статуса
+    status = request.args.get("status", "open")            
     older_than_minutes = request.args.get("older_than_minutes", type=int) or 0
-    a_type = request.args.get("type")                        # опционально: ограничить тип
+    a_type = request.args.get("type")                     
     args = []
     sql = "UPDATE alerts SET status='closed', closed_at=? WHERE 1=1"
     now = now_iso()
@@ -237,8 +228,5 @@ def close_bulk():
     affected, _ = exec_write(sql, tuple(args))
     return jsonify({"ok": True, "closed": affected, "closed_at": now})
 
-# ---------- Main ----------
-
 if __name__ == "__main__":
-    # локальный запуск: python3 app.py
     app.run(host="0.0.0.0", port=5000)

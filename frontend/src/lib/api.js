@@ -1,5 +1,3 @@
-// Унифицированный клиент для API: токен, базовый URL, JSON-хелперы
-
 const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
 const TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
