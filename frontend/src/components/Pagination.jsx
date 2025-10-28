@@ -11,26 +11,43 @@ export default function Pagination({ page, pageSize, total, setPage }) {
     seq.push(p);
   });
 
-  return (
-    <div className="flex items-center justify-end gap-2 text-sm">
-      <button onClick={() => go(page - 1)} disabled={page === 1}
-        className={`px-2 py-1 rounded-md border ${page === 1 ? 'border-zinc-700/40 text-zinc-500 cursor-not-allowed' : 'border-zinc-700/60 hover:bg-zinc-900'}`}>
-        Prev
-      </button>
-      {seq.map((x, i) =>
-        x === '…' ? (
-          <span key={`gap-${i}`} className="px-1 text-zinc-500">…</span>
-        ) : (
-          <button key={x} onClick={() => go(x)}
-            className={`px-2 py-1 rounded-md border ${x === page ? 'border-zinc-600 bg-zinc-900' : 'border-zinc-700/60 hover:bg-zinc-900'}`}>
-            {x}
-          </button>
-        )
-      )}
-      <button onClick={() => go(page + 1)} disabled={page === pages}
-        className={`px-2 py-1 rounded-md border ${page === pages ? 'border-zinc-700/40 text-zinc-500 cursor-not-allowed' : 'border-zinc-700/60 hover:bg-zinc-900'}`}>
-        Next
-      </button>
-    </div>
-  );
+ return (
+  <div className="flex items-center justify-end gap-2 text-sm select-none">
+    {/* Prev */}
+    <button
+      onClick={() => go(page - 1)}
+      disabled={page === 1}
+      className={`pagination-btn ${page === 1 ? 'disabled' : ''}`}
+    >
+      Prev
+    </button>
+
+    {/* Pages */}
+    {seq.map((x, i) =>
+      x === '…' ? (
+        <span key={`gap-${i}`} className="px-1 text-zinc-400">
+          …
+        </span>
+      ) : (
+        <button
+          key={x}
+          onClick={() => go(x)}
+          className={`pagination-btn ${x === page ? 'active' : ''}`}
+        >
+          {x}
+        </button>
+      )
+    )}
+
+    {/* Next */}
+    <button
+      onClick={() => go(page + 1)}
+      disabled={page === pages}
+      className={`pagination-btn ${page === pages ? 'disabled' : ''}`}
+    >
+      Next
+    </button>
+  </div>
+);
+
 }

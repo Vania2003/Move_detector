@@ -51,7 +51,7 @@ export default function Devices() {
           />
         </div>
       </div>
-      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-x-auto bg-white dark:bg-zinc-950/60 shadow">
+      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-x-auto bg-white dark:bg-zinc-950 shadow">
         <table className="min-w-[500px] w-full text-sm">
           <thead className="bg-zinc-100 dark:bg-zinc-900/60">
             <tr>

@@ -9,8 +9,8 @@ export default function Toolbar({ alertsOpen, apiStatus, onThemeToggle, dark }) 
     { label: 'Alerts', path: '/alerts', icon: FiBell },
     { label: 'Devices', path: '/devices', icon: FiMonitor },
     { label: 'Settings', path: '/settings', icon: FiSettings },
-    // Future: { label: 'History', path: '/history', icon: FiDatabase },
-    // Future: { label: 'Rooms/Map', path: '/rooms', icon: FiMap },
+    { label: 'History', path: '/history', icon: FiDatabase },
+    { label: 'Rooms/Map', path: '/rooms', icon: FiMap },
   ];
   return (
     <header className="border-b border-zinc-200 dark:border-zinc-700 sticky top-0 bg-white dark:bg-black/60 backdrop-blur shadow z-20">
@@ -27,8 +27,8 @@ export default function Toolbar({ alertsOpen, apiStatus, onThemeToggle, dark }) 
               className={({ isActive }) =>
                 `px-3 py-2 rounded-md text-sm flex items-center gap-1 transition font-medium
                   ${isActive || location.pathname === item.path
-                    ? 'bg-indigo-200 dark:bg-indigo-900 text-indigo-900 dark:text-indigo-100'
-                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-indigo-700 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-indigo-100'}`
+                  ? 'bg-indigo-900/70 text-white font-semibold'
+                  :'text-zinc-700 hover:bg-zinc-100 hover:text-indigo-800 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/60'}`
               }>
               <item.icon size={17} className="inline mr-1" /> {item.label}
               {item.label === "Alerts" && alertsOpen > 0 &&

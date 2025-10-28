@@ -52,23 +52,23 @@ export default function Alerts() {
   usePolling(() => live && load({ silent: true }), 10000);
 
   const ack = async (id) => {
-    try {
+  try {
       await apiPost(`/api/alerts/${id}/ack`, { by: "web" });
-      toast.push("ok", "Alert acked");
       load({ silent: true });
     } catch {
-      toast.push("err", "Ack failed");
+      toast.push("err", "Ack failed"); 
     }
   };
+
   const close = async (id) => {
     try {
       await apiPost(`/api/alerts/${id}/close`);
-      toast.push("ok", "Alert closed");
       load({ silent: true });
     } catch {
       toast.push("err", "Close failed");
     }
   };
+
   const bulkClose = async () => {
     try {
       await apiPost(`/api/alerts/close-bulk?status=open&older_than_minutes=30&type=NO_HEARTBEAT`);
@@ -83,7 +83,6 @@ export default function Alerts() {
   const pageRows = items.slice(start, start + pageSize);
   const showTableLoading = loading && items.length === 0;
 
-  // Сводка по типам
   const summary = {
     open: items.filter(a => a.status === "open").length,
     INACTIVITY: items.filter(a => a.type === "INACTIVITY").length,
@@ -91,7 +90,6 @@ export default function Alerts() {
     NO_HEARTBEAT: items.filter(a => a.type === "NO_HEARTBEAT").length
   };
 
-  // --- CSV экспорт
   function toCSV(rows){
     if(!rows?.length) return "";
     const cols = Object.keys(rows[0]);
@@ -124,14 +122,16 @@ export default function Alerts() {
         <Input label="Room contains" value={roomLike} setValue={setRoomLike}/>
         <Input label="Last minutes" type="number" value={lastMin} setValue={setLastMin} min={0}/>
         <label className="text-sm flex items-center gap-2 ml-2"><input type="checkbox" checked={live} onChange={e=>setLive(e.target.checked)}/><span className="text-zinc-400">Live</span></label>
-        <button onClick={() => { setRefreshing(true); load(); }} className="border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center gap-2">
-          {refreshing ? <Spinner size={16}/> : <FiRefreshCw size={16}/> } Refresh
+        <button onClick={() => { setRefreshing(true); load(); }} className="ghost-btn">
+          { refreshing ? <Spinner size={16}/> : <FiRefreshCw size={16}/> } Refresh
         </button>
-        <button onClick={()=>download(`alerts_${Date.now()}.csv`, toCSV(items))} className="border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center gap-2"><FiDownload/> Export CSV</button>
+        <button onClick={()=>download(`alerts_${Date.now()}.csv`, toCSV(items)) } className="ghost-btn">
+        <FiDownload/> Export CSV
+        </button>
         <button onClick={bulkClose} className="border border-red-700 text-red-500 dark:text-red-300 rounded-md px-3 py-2 text-sm hover:bg-red-900/20 flex items-center gap-2"><FiXCircle/> Close stale NO_HEARTBEAT</button>
       </div>
       {/* Таблица */}
-      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-x-auto bg-white dark:bg-zinc-950/60 shadow">
+      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-x-auto bg-white dark:bg-zinc-950 shadow">
         <table className="min-w-[1000px] w-full text-sm">
           <thead className="bg-zinc-100 dark:bg-zinc-900/60">
             <tr>
@@ -157,8 +157,12 @@ export default function Alerts() {
                   <Td><StatusBadge status={a.status}/></Td>
                   <Td onClick={e=>e.stopPropagation()}>
                     <div className="flex gap-2">
-                      <button onClick={() => ack(a.id)} disabled={a.status !== "open"} className="rounded-md px-2 py-1 text-xs border border-amber-400 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/20">Ack</button>
-                      <button onClick={() => close(a.id)} disabled={a.status === "closed"} className="rounded-md px-2 py-1 text-xs border border-red-700 text-red-500 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/20">Close</button>
+                      < button onClick={() => ack(a.id)} disabled={a.status !== "open"} className="alert-btn alert-btn-ack">
+                        Ack
+                      </button>
+                      < button onClick={() => close(a.id)} disabled={a.status === "closed"} className="alert-btn alert-btn-close">
+                        Close
+                      </button>
                     </div>
                   </Td>
                   <Td className="max-w-[380px] truncate" title={a.details || ""}>{a.details || "—"}</Td>
@@ -227,9 +231,9 @@ function Th({ children }) { return <th className="text-left px-3 py-2 text-zinc-
 function Td({ children, mono, className }) { return <td className={`px-3 py-2 ${mono ? "font-mono text-xs" : ""} ${className || ""}`}>{children}</td>; }
 function Detail({ label, value }) {
   return (
-    <div className="border border-zinc-800 rounded-md p-2 bg-zinc-950/40">
-      <div className="text-xs text-zinc-400">{label}</div>
-      <div className="text-sm">{value ?? "—"}</div>
+    <div className="detail-card">
+      <div className="label">{label}</div>
+      <div className="value">{value ?? "—"}</div>
     </div>
   );
 }

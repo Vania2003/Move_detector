@@ -56,12 +56,12 @@ export default function History() {
         <button
           onClick={downloadCSV}
           disabled={!data.length}
-          className="border border-zinc-200 dark:border-zinc-700 rounded-md px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center gap-2">
+          className={`ghost-btn ${!data.length ? 'opacity-50 cursor-not-allowed' : ''}`}>
           <FiDownload/> Export CSV
         </button>
         <span className="text-xs text-zinc-400">{data.length} records</span>
       </div>
-      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-x-auto bg-white dark:bg-zinc-950/60 shadow">
+      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-x-auto bg-white dark:bg-zinc-950 shadow">
         {loading
           ? <div className="p-8 flex justify-center"><Spinner size={32}/></div>
           : data.length === 0

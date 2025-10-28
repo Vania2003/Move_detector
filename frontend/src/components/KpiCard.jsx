@@ -2,7 +2,7 @@ import React from "react";
 
 // icon: React component (например, FiBell), color: "emerald", "red", "blue", count: число, hint: подзаголовок
 export default function KpiCard({ icon: Icon, label, value, color = "indigo", hint, children }) {
-  const bgColor = `bg-${color}-50 dark:bg-${color}-950/60`;
+  const bgColor = `bg-${color}-50 dark:bg-${color}-950`;
   const borderColor = `border-${color}-200 dark:border-${color}-800`;
   const textColor = `text-${color}-800 dark:text-${color}-200`;
   return (

@@ -69,40 +69,42 @@ export default function Dashboard() {
 
       {/* Последние сообщения */}
       <section className="space-y-2">
-        <h2 className="text-lg font-bold flex items-center gap-2">
-          <FiActivity className="text-indigo-400" /> Latest MQTT messages
-        </h2>
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-x-auto bg-white dark:bg-zinc-950/60 shadow">
-          <table className="min-w-[560px] w-full text-sm">
-            <thead className="bg-zinc-100 dark:bg-zinc-900/60">
+      <h2 className="text-lg font-bold flex items-center gap-2">
+        <FiActivity className="text-indigo-400" /> Latest MQTT messages
+      </h2>
+      {/* ЭТО div-контейнер для таблицы — именно здесь выставляем оба bg класса */}
+      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-x-auto bg-white dark:bg-zinc-950 shadow">
+        <table className="w-full text-sm">
+          <thead className="bg-zinc-100 dark:bg-zinc-900/60">
+            <tr>
+              <Th>ts_utc</Th>
+              <Th>topic</Th>
+              <Th>payload</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
               <tr>
-                <Th>ts_utc</Th>
-                <Th>topic</Th>
-                <Th>payload</Th>
+                <td className="p-4 text-zinc-400" colSpan={3}>Loading…</td>
               </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td className="p-4 text-zinc-400" colSpan={3}>Loading…</td>
+            ) : messages.length === 0 ? (
+              <tr>
+                <td className="p-4 text-zinc-400" colSpan={3}>No messages yet</td>
+              </tr>
+            ) : (
+              messages.map((m, i) => (
+                <tr key={i} className="border-t border-zinc-100 dark:border-zinc-900/80">
+                  <Td mono>{m.ts_utc}</Td>
+                  <Td>{m.topic}</Td>
+                  <Td mono className="truncate">{m.payload}</Td>
                 </tr>
-              ) : messages.length === 0 ? (
-                <tr>
-                  <td className="p-4 text-zinc-400" colSpan={3}>No messages yet</td>
-                </tr>
-              ) : (
-                messages.map((m, i) => (
-                  <tr key={i} className="border-t border-zinc-100 dark:border-zinc-900/80">
-                    <Td mono>{m.ts_utc}</Td>
-                    <Td>{m.topic}</Td>
-                    <Td mono className="truncate">{m.payload}</Td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     </div>
   );
 }
