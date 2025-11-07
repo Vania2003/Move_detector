@@ -1,9 +1,3 @@
-#!/bin/bash
-# ==============================================
-# Eldercare Full Simulation Test Suite
-# Author: Dyplom Project - Raspberry Controller
-# ==============================================
-
 DB_PATH="/home/pi/DYPLOM/device/raspberry/events.db"
 SIM_PATH="/home/pi/DYPLOM/device/raspberry/publish_sim.py"
 LOG_COLOR="\e[36m"
@@ -23,7 +17,6 @@ show_alerts() {
     echo "------------------------------------------"
 }
 
-# 1️⃣ Morning routine – LivingRoom
 echo -e "\n🔹 [1/6] Morning routine – LivingRoom"
 python3 "$SIM_PATH" <<EOF
 TestRoom
@@ -35,7 +28,6 @@ EOF
 sleep 3
 show_alerts
 
-# 2️⃣ Day activity – Kitchen
 echo -e "\n🔹 [2/6] Day activity – Kitchen"
 python3 "$SIM_PATH" <<EOF
 Kitchen
@@ -47,7 +39,6 @@ EOF
 sleep 3
 show_alerts
 
-# 3️⃣ Long stay – Bathroom
 echo -e "\n🔹 [3/6] Long stay – Bathroom"
 python3 "$SIM_PATH" <<EOF
 Bathroom
@@ -59,7 +50,6 @@ EOF
 sleep 3
 show_alerts
 
-# 4️⃣ Inactivity – Hallway
 echo -e "\n🔹 [4/6] Inactivity – Hallway"
 python3 "$SIM_PATH" <<EOF
 Hallway
@@ -71,7 +61,6 @@ EOF
 sleep 5
 show_alerts
 
-# 5️⃣ Recovery – Movement resumes
 echo -e "\n🔹 [5/6] Recovery – Hallway motion resumes"
 python3 "$SIM_PATH" <<EOF
 Hallway
@@ -84,7 +73,6 @@ EOF
 sleep 3
 show_alerts
 
-# 6️⃣ Summary
 echo -e "\n🔹 [6/6] Final alert summary"
 run_sql "SELECT id, room, rule, status, details, created_at FROM alerts ORDER BY id DESC LIMIT 10;"
 

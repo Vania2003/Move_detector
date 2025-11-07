@@ -1,4 +1,3 @@
-#!/bin/bash
 set -e
 
 PI_USER="pi"

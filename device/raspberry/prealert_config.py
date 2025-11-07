@@ -1,4 +1,3 @@
-# /home/pi/DYPLOM/device/raspberry/prealert_config.py
 import json
 from pathlib import Path
 from datetime import datetime, time
@@ -32,7 +31,6 @@ def get_room_cfg(room, cfg=None):
     return merged
 
 def in_night_window(cfg):
-    # cfg: merged for room
     if not cfg.get("night_block", False):
         return False
     nw = cfg.get("night_window", {"from":"23:00","to":"07:00"})

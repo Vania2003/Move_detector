@@ -107,7 +107,6 @@ export default function Settings() {
         <FiSettings /> Rule settings
       </h1>
 
-      {/* === RULE ENGINE SETTINGS === */}
       <form className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
         {RULE_FIELDS.map((f) => (
           <label key={f.key} className="flex flex-col gap-1">
@@ -123,7 +122,6 @@ export default function Settings() {
         ))}
       </form>
 
-      {/* === ROOM PREALERT SETTINGS === */}
       <div className="border-t border-zinc-300 dark:border-zinc-700 pt-6 space-y-4">
         <h2 className="text-lg font-bold flex items-center gap-2">
           <FiZap /> Room Prealert Configuration
@@ -210,7 +208,6 @@ export default function Settings() {
             />
             Block at night
           </label>
-          {/* === NIGHT WINDOW === */}
           {roomSettings?.night_block && (
             <div className="grid grid-cols-2 gap-4 pt-2">
               <label className="flex flex-col">
@@ -258,7 +255,6 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* === ACTION BUTTONS === */}
       <div className="flex gap-3 pt-1">
         <button
           type="button"
@@ -286,7 +282,6 @@ export default function Settings() {
         </div>
       )}
 
-      {/* === STATUS + MAINTENANCE === */}
       <div className="border-t border-zinc-200 dark:border-zinc-700 pt-6 mt-6 space-y-4">
         <h2 className="text-lg font-bold flex items-center gap-2">
           <FiLink /> API & Notifier status

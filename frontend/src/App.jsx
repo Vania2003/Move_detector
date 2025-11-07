@@ -48,7 +48,6 @@ export default function App() {
     <ToastProvider>
       <BrowserRouter>
         <div className="min-h-screen font-inter">
-          {/* Шапка */}
           <header className={
             "border-b sticky top-0 backdrop-blur z-30 shadow-lg " +
             (dark
@@ -71,7 +70,6 @@ export default function App() {
               <ThemeToggle dark={dark} setDark={setDark} />
             </div>
           </header>
-          {/* Контент */}
           <main className="max-w-6xl mx-auto px-5 py-8">
             <Routes>
               <Route path="/" element={<Dashboard />} />

@@ -1,4 +1,3 @@
-// src/pages/RoomsMap.jsx
 import React from "react";
 import { FiActivity, FiMapPin } from "react-icons/fi";
 
@@ -17,7 +16,6 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
   const [active, setActive] = React.useState(null);
 
   React.useEffect(() => {
-    // Загружаем комнаты
     fetch("http://192.168.0.48:5000/api/rooms", {
       headers: { "X-API-Key": "iotkey" },
     })
@@ -38,7 +36,6 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
       })
       .catch((err) => console.error("Failed to fetch rooms:", err));
 
-    // Загружаем события
     fetch("http://192.168.0.48:5000/api/events/recent", {
       headers: { "X-API-Key": "iotkey" },
     })
@@ -51,7 +48,6 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
 
   return (
     <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Карта */}
       <div className="card relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.08] dark:opacity-15 pointer-events-none"
@@ -75,8 +71,6 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
             {rooms.map((r, i) => {
               const isActive = active === r.key;
               const motionCount = eventsByRoom[r.key]?.length || r.motionsToday || 0;
-
-              // рассчитываем координаты динамически
               const x = 40 + (i % 2) * 160;
               const y = 20 + Math.floor(i / 2) * 90;
 
@@ -94,7 +88,6 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
                     transition: "all .25s ease",
                   }}
                 >
-                  {/* фон плитки */}
                   <rect
                     x={x}
                     y={y}
@@ -115,7 +108,6 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
                     }}
                   />
 
-                  {/* название комнаты */}
                   <text
                     x={x + r.w / 2}
                     y={y + r.h / 2 + 4}
@@ -132,7 +124,6 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
                     {r.name}
                   </text>
 
-                  {/* кружок с цифрой */}
                   <g transform={`translate(${x + r.w - 12}, ${y + 14})`}>
                     <circle r="10" fill="#3b82f6" opacity="0.25" />
                     <text
@@ -149,7 +140,6 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
               );
             })}
 
-            {/* Градиенты */}
             <defs>
               <linearGradient id="gradNeutral" x1="0" x2="1" y1="0" y2="1">
                 <stop offset="0%" stopColor="#27272a" />
@@ -174,7 +164,6 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
         </div>
       </div>
 
-      {/* Панель справа */}
       <div className="space-y-3">
         <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/50 backdrop-blur p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200">
@@ -198,7 +187,6 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
           )}
         </div>
 
-        {/* События */}
         <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/50 backdrop-blur p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200">
             Recent events
@@ -206,7 +194,7 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
           {activeRoom ? (
             <ul className="list-disc ml-5 text-sm text-zinc-700 dark:text-zinc-300">
             {(eventsByRoom[activeRoom.key] || []).map((e, i) => {
-              const formattedTs = e.ts?.replace("T", " ") || e.ts; // убираем "T"
+              const formattedTs = e.ts?.replace("T", " ") || e.ts;
               return (
                 <li key={i}>
                   <span className="font-medium">{e.text}</span> at {formattedTs}

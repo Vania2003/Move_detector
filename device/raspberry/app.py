@@ -401,7 +401,7 @@ def led_control(room):
         payload = {"action": "start", "reason": "MANUAL", "ttl_sec": 30}
     elif action == "off":
         payload = {"action": "stop", "reason": "MANUAL"}
-    else:  # blink
+    else:
         payload = {"action": "start", "reason": "MANUAL", "ttl_sec": 5}
 
     mqtt_client.publish(topic, json.dumps(payload), qos=0, retain=False)
@@ -413,7 +413,6 @@ def led_control(room):
         "sent": payload
     })
 
-# === Новый endpoint для получения текущих настроек комнаты ===
 @app.route("/api/rooms/<room>/settings", methods=["GET"])
 def get_room_settings(room):
     require_token()

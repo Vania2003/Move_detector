@@ -9,6 +9,13 @@ sudo chown -R pi:pi /home/pi/DYPLOM/device/raspberry
 sudo systemctl stop rules-engine notifier
 sudo systemctl start rules-engine notifier
 sudo systemctl start mosquitto mqtt-logger rules-engine eldercare-api
+
+sudo systemctl enable flask-api.service
+sudo systemctl enable mqtt-logger.service
+sudo systemctl enable rules-engine.service
+sudo systemctl enable notifier.service
+sudo systemctl status flask-api.service mqtt-logger.service rules-engine.service notifier.service
+
 journalctl -u mqtt-logger -f
 journalctl -u rules-engine -f
 journalctl -u notifier -f
@@ -25,7 +32,7 @@ curl -s -H "X-API-Key: $KEY" "$API/api/alerts?status=open&limit=5" | jq . //spra
 python3 simulator_motion.py
 Room: room1
 Device: esp8266_test
-Mode: 4) Bathroom long stay
+Mode: Bathroom long stay
 Duration: 1 minuta
 
 journalctl -u mqtt-logger -f (zdarzenia),

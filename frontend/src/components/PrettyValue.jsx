@@ -7,7 +7,6 @@ function isUrl(v) {
 }
 function isIsoTs(v) {
   if (typeof v !== "string") return false;
-  // 2025-10-27 23:24:26 / 2025-10-27T23:24:26Z
   return /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/.test(v);
 }
 function timeAgo(ts) {
@@ -36,13 +35,10 @@ function CopyBtn({text}) {
   );
 }
 
-/** Универсальный рендер значения в таблицах/панелях */
 export default function PrettyValue({ value, mono=false, maxLen=120 }) {
-  // null/undefined
   if (value === null || value === undefined || value === "") {
     return <span className="text-zinc-400">—</span>;
   }
-  // boolean
   if (typeof value === "boolean") {
     return (
       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs border
@@ -53,11 +49,9 @@ export default function PrettyValue({ value, mono=false, maxLen=120 }) {
       </span>
     );
   }
-  // number
   if (typeof value === "number") {
     return <span className="font-mono text-xs">{value}</span>;
   }
-  // URL
   if (isUrl(value)) {
     const label = value.length > maxLen ? value.slice(0, maxLen-1) + "…" : value;
     return (
@@ -67,7 +61,6 @@ export default function PrettyValue({ value, mono=false, maxLen=120 }) {
       </a>
     );
   }
-  // ISO timestamp
   if (isIsoTs(value)) {
     return (
       <span className="inline-flex items-center gap-2">
@@ -78,7 +71,6 @@ export default function PrettyValue({ value, mono=false, maxLen=120 }) {
       </span>
     );
   }
-  // Array/Object → компакт + копировать
   if (typeof value === "object") {
     let text = JSON.stringify(value, null, 2);
     const short = text.length > maxLen ? text.slice(0, maxLen-1) + "…" : text;
@@ -89,7 +81,6 @@ export default function PrettyValue({ value, mono=false, maxLen=120 }) {
       </span>
     );
   }
-  // string (обычный)
   const s = String(value);
   const out = s.length > maxLen ? s.slice(0, maxLen-1) + "…" : s;
   return <span className={mono ? "font-mono text-xs" : ""}>{out}</span>;

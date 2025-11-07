@@ -1,4 +1,3 @@
-// src/pages/Devices.jsx
 import React from "react";
 import {
   FiMonitor, FiSearch, FiPlusCircle, FiTrash2, FiCheckCircle, FiAlertTriangle
@@ -28,12 +27,10 @@ export default function Devices() {
   const [search, setSearch] = React.useState("");
   const [loading, setLoading] = React.useState(false);
 
-  // registration form
   const [regId, setRegId] = React.useState("");
   const [regRoom, setRegRoom] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
 
-  // remove confirm
   const [toRemove, setToRemove] = React.useState(null);
   const [removing, setRemoving] = React.useState(false);
 
@@ -74,7 +71,6 @@ export default function Devices() {
     if (!toRemove) return;
     setRemoving(true);
     try {
-      // backend route: adjust if needed
       await apiPost(`/api/devices/${encodeURIComponent(toRemove.device_id)}/unregister`, {});
       toast.push("ok", `Device ${toRemove.device_id} removed`);
       setToRemove(null);
@@ -103,7 +99,6 @@ export default function Devices() {
         </div>
       </div>
 
-      {/* Register block */}
       <form
         onSubmit={registerDevice}
         className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 bg-white/5 dark:bg-zinc-950/60 flex items-end gap-3 flex-wrap"
@@ -136,7 +131,6 @@ export default function Devices() {
         </button>
       </form>
 
-      {/* Table */}
       <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-x-auto bg-white dark:bg-zinc-950 shadow">
         <table className="min-w-[760px] w-full text-sm">
           <thead className="bg-zinc-100 dark:bg-zinc-900/60">
@@ -183,7 +177,6 @@ export default function Devices() {
         Device must send heartbeats in the last 30 min to appear as <span className="text-emerald-400 font-medium">UP</span>.
       </div>
 
-      {/* Confirm remove drawer */}
       <Drawer
         open={!!toRemove}
         onClose={() => setToRemove(null)}

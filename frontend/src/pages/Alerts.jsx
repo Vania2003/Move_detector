@@ -11,7 +11,6 @@ import Spinner from "@/components/Spinner.jsx";
 import { useToast } from "@/components/Toast.jsx";
 import { timeAgo } from "@/utils/health";
 
-/* ---- options ---- */
 const TYPES = ["All", "INACTIVITY", "DWELL_CRITICAL", "NO_HEARTBEAT", "TEST_ALERT"];
 const STATUSES = ["All", "open", "closed"];
 const AGE_FILTERS = [
@@ -43,7 +42,6 @@ function StatusBadge({ status }) {
   return <span className="pill-closed"><FiCheckCircle size={14}/> Closed</span>;
 }
 
-/* ----------------- domain formatting ----------------- */
 function fmtLocal(iso) {
   if (!iso) return { local: "—", ago: "" };
   const d = new Date(iso);
@@ -54,7 +52,6 @@ function fmtLocal(iso) {
 function prettyDetails(a) {
   const parts = [];
 
-  // стабильная «соль» для ключей (на случай отсутствия id)
   const baseKey = String(a.id ?? a.ts_utc ?? a.device_id ?? Math.random().toString(36).slice(2));
 
   const add = (suffix, text, tone = "zinc") => {
@@ -77,7 +74,6 @@ function prettyDetails(a) {
     );
   };
 
-  // универсальный парсер длительности: "12 min" или "1800s"
   const parseDurationToMin = (str) => {
     if (!str) return null;
     const m = /([\d.]+)\s*(min|s)\b/i.exec(str);
@@ -159,8 +155,6 @@ export default function Alerts() {
   const ack = async (id) => {
     try {
       await apiPost(`/api/alerts/${id}/ack`, { by: "web" });
-      // «нормальный ACK»: после ack блокируем кнопку (признак — ack_at != null),
-      // перезагружаем список молча
       load({ silent: true });
     } catch {
       toast.push("err", "Ack failed");
@@ -184,7 +178,6 @@ export default function Alerts() {
     }
   };
   const purgeNow = async () => {
-    // ожидаемый серверный эндпоинт (не обязательный; если 404 — просто проигнорим)
     try {
       await apiPost(`/api/alerts/purge?older_than_days=7`);
       toast.push("ok", "Purged alerts older than 7 days");
@@ -194,7 +187,6 @@ export default function Alerts() {
     }
   };
 
-  // клиентский фильтр по возрасту
   const ageMinutes = AGE_FILTERS.find(f => f.key === ageKey)?.minutes ?? null;
   const now = Date.now();
   const filtered = items.filter(a => {
@@ -243,7 +235,6 @@ export default function Alerts() {
 
   return (
     <div className="space-y-6">
-      {/* header + summary */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-xl font-bold flex items-center gap-2"><FiBell className="text-red-400"/> Alerts</h1>
         <div className="flex flex-wrap gap-2 text-sm text-zinc-700 dark:text-zinc-300 font-medium">
@@ -254,12 +245,10 @@ export default function Alerts() {
         </div>
       </div>
 
-      {/* filters */}
       <div className="flex flex-wrap gap-2 items-end">
         <Filter label="Status" value={status} setValue={setStatus} options={STATUSES} icon={FiFilter}/>
         <Filter label="Type" value={type} setValue={setType} options={TYPES} icon={FiFilter}/>
         <Input label="Room contains" value={roomLike} setValue={setRoomLike}/>
-        {/* Клиентская авто-очистка из UI: просто скрываем старое */}
         <label className="text-sm text-zinc-700 dark:text-zinc-300 flex flex-col gap-1 min-w-[140px]">
           <span className="text-zinc-400">Hide older than</span>
           <select
@@ -286,13 +275,11 @@ export default function Alerts() {
             <FiXCircle/> Close stale NO_HEARTBEAT
           </button>
         )}
-        {/* ручная серверная очистка >7d (если доступен эндпоинт) */}
         <button onClick={purgeNow} className="ghost-btn">
           <FiXCircle/> Purge closed 
         </button>
       </div>
 
-      {/* table */}
       <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-x-auto bg-white dark:bg-zinc-950 shadow">
         <table className="min-w-[980px] w-full text-sm">
           <thead className="bg-zinc-100 dark:bg-zinc-900/60">
@@ -362,7 +349,6 @@ export default function Alerts() {
         <Pagination page={page} pageSize={pageSize} total={filtered.length} setPage={setPage}/>
       </div>
 
-      {/* Drawer (по клику на строку) */}
       <Drawer open={!!selected} onClose={() => setSelected(null)} title={selected ? `Alert #${selected.id}` : "Alert"}>
         {selected && (
           <div className="space-y-3">
@@ -411,7 +397,6 @@ export default function Alerts() {
   );
 }
 
-/* ----------------- small controls ----------------- */
 function Filter({ label, value, setValue, options, icon: Icon }) {
   return (
     <label className="text-sm text-zinc-700 dark:text-zinc-300 flex flex-col gap-1 min-w-[100px]">

@@ -3,14 +3,12 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
-// ---- ПИНЫ ----
 #define PIR_PIN        D5
 #define LED_PIN        LED_BUILTIN
 #ifndef LED_ACTIVE_LOW
 #define LED_ACTIVE_LOW 1
 #endif
 
-// ---- СЕТЬ / MQTT ----
 const char* WIFI_SSID   = "Samotne kobiety w twojej okolicy";
 const char* WIFI_PASS   = "69Milfs_in_50m";
 const char* MQTT_HOST   = "192.168.0.48";
@@ -18,25 +16,19 @@ const uint16_t MQTT_PORT= 1883;
 const char* MQTT_USER   = "iot";
 const char* MQTT_PASSWD = "iot";
 
-// ---- ОБЩИЕ КОНСТАНТЫ ----
 const char* DEVICE  = "room1";
 const char* BASE    = "iot/eldercare/";
 
-// ---- ОБЪЕКТЫ ----
 WiFiClient espClient;
 PubSubClient mqtt(espClient);
 
-// ---- СОСТОЯНИЕ ----
 unsigned long lastMotionMs = 0;
 bool motionState = false;
 bool prealertActive = false;
 unsigned long prealertEndMs = 0;
-const unsigned long BLINK_PERIOD = 400; // мигание 2.5 Гц
+const unsigned long BLINK_PERIOD = 400;
 unsigned long blinkMs = 0;
 
-// ======================================================
-// -----------------  УТИЛИТЫ  ---------------------------
-// ======================================================
 inline void ledWriteRaw(bool on) {
   digitalWrite(LED_PIN, LED_ACTIVE_LOW ? (on ? LOW : HIGH) : (on ? HIGH : LOW));
 }
@@ -48,7 +40,6 @@ void publishJson(const String& topic, JsonDocument& doc) {
   mqtt.publish(topic.c_str(), buf, n);
 }
 
-// ---- Публикация состояния движения ----
 void sendMotion(bool m) {
   StaticJsonDocument<128> doc;
   doc["motion"] = m;
@@ -58,9 +49,6 @@ void sendMotion(bool m) {
   Serial.printf("[PIR] motion=%d\n", m);
 }
 
-// ======================================================
-// -----------------  MQTT CALLBACK ----------------------
-// ======================================================
 void startPrealert();
 void stopPrealert();
 
@@ -82,10 +70,6 @@ void onMqtt(char* topic, byte* payload, unsigned int len) {
   }
 }
 
-
-// ======================================================
-// -----------------  MQTT CONNECT -----------------------
-// ======================================================
 void ensureMqtt() {
   while (!mqtt.connected()) {
     String cid = "esp8266-" + String(ESP.getChipId(), HEX);
@@ -103,7 +87,7 @@ void ensureMqtt() {
 
 void startPrealert() {
   prealertActive = true;
-  prealertEndMs = millis() + 5000;  // по умолчанию 5 секунд, можно обновлять TTL позже
+  prealertEndMs = millis() + 5000;
   blinkMs = 0;
   Serial.println("[PREALERT] started (LED blinking)");
 }
@@ -127,9 +111,6 @@ void handlePrealertBlink() {
   }
 }
 
-// ======================================================
-// -----------------  SETUP ------------------------------
-// ======================================================
 void setup() {
   Serial.begin(115200);
   delay(200);
@@ -162,9 +143,6 @@ void setup() {
   Serial.println("[INIT] Ready.");
 }
 
-// ======================================================
-// -----------------  LOOP -------------------------------
-// ======================================================
 void loop() {
   if (!mqtt.connected()) ensureMqtt();
   mqtt.loop();
@@ -172,14 +150,12 @@ void loop() {
 
   bool pir = digitalRead(PIR_PIN) == HIGH;
 
-  // === изменение состояния PIR ===
   if (pir != motionState) {
     motionState = pir;
-    sendMotion(pir);            // только публикация в MQTT
+    sendMotion(pir);        
     lastMotionMs = millis();
   }
 
-  // === Live debug ===
   static unsigned long dbgMs = 0;
   if (millis() - dbgMs >= 500) {
     dbgMs = millis();

@@ -1,4 +1,3 @@
-# /home/pi/DYPLOM/device/raspberry/rules_engine.py
 import sqlite3
 import time
 import json
@@ -9,20 +8,17 @@ import paho.mqtt.client as mqtt
 
 from prealert_config import load_config, get_room_cfg, in_night_window
 
-# ---------- Константы ----------
 DB_PATH = "/home/pi/DYPLOM/device/raspberry/events.db"
-CHECK_INTERVAL = 15  # сек
+CHECK_INTERVAL = 15  # sec
 MQTT_HOST = "192.168.0.48"
 MQTT_PORT = 1883
 MQTT_USER = "iot"
 MQTT_PASS = "iot"
 
-# ---------- Глобальное состояние ----------
 mqtt_client = None
 config_cache = load_config()
 _last_prealert_sent = {}  # {room: ts_monotonic}
 
-# ---------- Утилиты ----------
 def now_utc_str():
     return datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -40,7 +36,6 @@ def init_mqtt_once():
     mqtt_client = mqttc
     log("[PREALERT] MQTT client connected and loop started")
 
-# ---------- Доступ к БД ----------
 def get_settings():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
@@ -63,7 +58,6 @@ def get_last_motion(con, room: str):
     Сначала через devices (device->room), затем fallback по messages_raw topic.
     """
     cur = con.cursor()
-    # 1) Через join motion_events -> devices по room
     cur.execute("""
         SELECT MAX(m.ts_utc)
           FROM motion_events m
@@ -80,7 +74,6 @@ def get_last_motion(con, room: str):
         except Exception:
             pass
 
-    # 2) Fallback: по messages_raw с topic iot/eldercare/<room>/motion/state
     cur.execute("""
         SELECT MAX(ts_utc)
           FROM messages_raw
@@ -98,7 +91,6 @@ def get_last_motion(con, room: str):
 
     return None
 
-# ---------- Операции с алертами ----------
 def open_alert(con, rule, room, details, severity="medium"):
     cur = con.cursor()
     cur.execute("""
@@ -163,7 +155,6 @@ def close_alert_device(con, rule, device_id):
         con.commit()
         log(f"✅ Closed alert {rule} for device={device_id}")
 
-# ---------- Преалерт MQTT ----------
 def publish_prealert_start(room, ttl_sec=300):
     topic = f"iot/eldercare/{room}/cmd/prealert"
     payload = {"action": "start", "reason": "INACTIVITY", "ttl_sec": ttl_sec}
@@ -187,11 +178,9 @@ def maybe_send_prealert(room: str, now_epoch: float, last_motion_epoch: float):
     pre_offset = int(cfg.get("prealert_offset_sec", 5 * 60))
     elapsed = now_epoch - last_motion_epoch
 
-    # окно пред-алерта
     if not (inactivity - pre_offset <= elapsed < inactivity):
         return
 
-    # анти-спам (не чаще раза в 120 сек)
     last = _last_prealert_sent.get(room)
     if last and (time.monotonic() - last) < 120:
         return
@@ -200,7 +189,6 @@ def maybe_send_prealert(room: str, now_epoch: float, last_motion_epoch: float):
     publish_prealert_start(room, ttl_sec=ttl)
     _last_prealert_sent[room] = time.monotonic()
 
-# ---------- Правила ----------
 def check_inactivity(con, settings, room):
     cfg = get_room_cfg(room, config_cache)
     if not cfg.get("enabled", True):
@@ -222,12 +210,10 @@ def check_inactivity(con, settings, room):
 
     log(f"[DEBUG] room={room} elapsed={elapsed:.1f}s (inactivity={inactivity}, prealert_offset={pre_offset})")
 
-    # Триггер пред-алерта
     if start_window <= elapsed < inactivity and not in_night_window(cfg):
         ttl = int(max(1, inactivity - elapsed))
         publish_prealert_start(room, ttl_sec=ttl)
 
-    # Открытие/закрытие INACTIVITY
     if elapsed > inactivity and not has_open_alert_room(con, "INACTIVITY", room):
         minutes = elapsed / 60.0
         open_alert_room(con, "INACTIVITY", room, f"No motion for {minutes:.1f} min", "high")
@@ -278,7 +264,6 @@ def check_heartbeat(con):
             if has_open_alert_device(con, "NO_HEARTBEAT", device):
                 close_alert_device(con, "NO_HEARTBEAT", device)
 
-# ---------- Главный цикл ----------
 def main():
     log("Rules Engine started.")
     init_mqtt_once()
@@ -293,7 +278,6 @@ def main():
                 check_inactivity(con, settings, room)
                 check_dwell(con, settings, room)
 
-                # Отправка пред-алерта на основе последнего движения (в секундах)
                 last = get_last_motion(con, room)
                 if last:
                     now_epoch = time.time()
@@ -308,6 +292,5 @@ def main():
         time.sleep(CHECK_INTERVAL)
 
 if __name__ == "__main__":
-    # Без дополнительных потоков: один главный цикл достаточно
     main()
 

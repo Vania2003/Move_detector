@@ -1,4 +1,3 @@
-// src/lib/api.js
 const BASE  = import.meta.env.VITE_API_BASE  || 'http://localhost:5000';
 const TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
@@ -6,7 +5,7 @@ function authHeaders() {
   const h = {};
   if (TOKEN) {
     h['Authorization'] = `Bearer ${TOKEN}`;
-    h['X-API-Key'] = TOKEN;            // дублируем для совместимости
+    h['X-API-Key'] = TOKEN;
   }
   return h;
 }

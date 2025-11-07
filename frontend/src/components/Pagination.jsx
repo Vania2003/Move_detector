@@ -13,7 +13,6 @@ export default function Pagination({ page, pageSize, total, setPage }) {
 
  return (
   <div className="flex items-center justify-end gap-2 text-sm select-none">
-    {/* Prev */}
     <button
       onClick={() => go(page - 1)}
       disabled={page === 1}
@@ -22,7 +21,6 @@ export default function Pagination({ page, pageSize, total, setPage }) {
       Prev
     </button>
 
-    {/* Pages */}
     {seq.map((x, i) =>
       x === '…' ? (
         <span key={`gap-${i}`} className="px-1 text-zinc-400">

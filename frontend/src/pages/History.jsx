@@ -4,13 +4,11 @@ import { apiGet } from "@/lib/api";
 import Spinner from "@/components/Spinner.jsx";
 import { timeAgo } from "@/utils/health";
 
-/** ——— вкладки: оставили только Raw MQTT и Heartbeats ——— */
 const TABS = [
   { key: "raw", label: "Raw MQTT", icon: FiMessageSquare, endpoint: "/api/messages?limit=1000" },
   { key: "hb",  label: "Heartbeats", icon: FiHeart,        endpoint: "/api/heartbeats?limit=1000" }
 ];
 
-/** ——— мелкие UI-хелперы ——— */
 const Th = ({ children, className }) => (
   <th className={`text-left px-3 py-2 text-zinc-400 ${className || ""}`}>{children}</th>
 );
@@ -40,7 +38,6 @@ function fmtLocal(iso) {
   return { local: d.toLocaleString(), ago: timeAgo(iso) };
 }
 
-/** ——— парсинг полезного из payload ——— */
 function parsePayload(payload) {
   try {
     const obj = typeof payload === "string" ? JSON.parse(payload) : payload;
@@ -54,7 +51,6 @@ function parsePayload(payload) {
     if (obj.uptime_ms) chips.push({ text: `up: ${Math.floor(obj.uptime_ms/1000)}s`, tone: "amber" });
     if (obj.rssi)    chips.push({ text: `rssi: ${obj.rssi}`, tone: "blue" });
 
-    // компактная сводка: возьмём самые важные поля
     const keyVals = [];
     if ("motion" in obj) keyVals.push(`motion=${obj.motion}`);
     if (obj.room)        keyVals.push(`room=${obj.room}`);
@@ -67,7 +63,6 @@ function parsePayload(payload) {
   }
 }
 
-/** ——— основная страница ——— */
 export default function History() {
   const [tab, setTab] = React.useState("raw");
   const [data, setData] = React.useState([]);
@@ -99,7 +94,6 @@ export default function History() {
     <div className="space-y-7">
       <h1 className="text-xl font-bold flex items-center gap-2"><FiMessageSquare className="text-indigo-400"/> History</h1>
 
-      {/* табы со стилем, как раньше */}
       <div className="flex gap-2 mb-2 border-b border-zinc-200 dark:border-zinc-700">
         {TABS.map(t =>
           <button
@@ -124,7 +118,6 @@ export default function History() {
         <span className="text-xs text-zinc-400">{data.length} records</span>
       </div>
 
-      {/* «вкусная» таблица: скругления, ховеры, зебра, липкая шапка */}
       <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-950 shadow">
         {loading
           ? <div className="p-8 flex justify-center"><Spinner size={32}/></div>
@@ -137,7 +130,6 @@ export default function History() {
   );
 }
 
-/** ——— RAW MQTT: time, room/device (если есть), payload компактно ——— */
 function RawTable({ rows }) {
   return (
     <div className="overflow-x-auto">
@@ -153,7 +145,6 @@ function RawTable({ rows }) {
           {rows.map((r, i) => {
             const t = fmtLocal(r.ts_utc || r.ts || r.time);
             const { summary, chips } = parsePayload(r.payload);
-            // из topic попытаемся вытащить room/device, если есть привычные паттерны
             let topicRoom = null, topicDev = null;
             if (r.topic) {
               const mRoom = /\/room\/([^/]+)/i.exec(r.topic);
@@ -173,7 +164,6 @@ function RawTable({ rows }) {
                   <div className="flex gap-2 flex-wrap">
                     {topicRoom && <Chip tone="indigo">{topicRoom}</Chip>}
                     {topicDev &&  <Chip tone="slate">{topicDev}</Chip>}
-                    {/* если в payload тоже есть room/device — добавим, но не дублируем */}
                     {chips
                       .filter(c => !(topicRoom && c.text === topicRoom) && !(topicDev && c.text === topicDev))
                       .map((c, idx) => <Chip key={idx} tone={c.tone}>{c.text}</Chip>)}
@@ -193,9 +183,7 @@ function RawTable({ rows }) {
   );
 }
 
-/** ——— HEARTBEATS: time, device, uptime/rssi, misc ——— */
 function HbTable({ rows }) {
-  // попытаемся нормализовать частые поля: ts_utc, device_id, uptime_ms, rssi, voltage, fw
   return (
     <div className="overflow-x-auto">
       <table className="min-w-[680px] w-full text-sm">

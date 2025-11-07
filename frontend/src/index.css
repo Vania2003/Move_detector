@@ -434,7 +434,7 @@ header nav a.active {
 }
 
 .dark .recent-events {
-  color: #d1d5db !important; /* светло-серый, как secondary текст */
+  color: #d1d5db !important;
 }
 .dark .recent-events li {
   color: #e4e4e7 !important; 
@@ -443,7 +443,6 @@ header nav a.active {
   color: #f5f5f5 !important; 
 }
 
-/* === Fix invisible time picker icons in dark mode === */
 .dark input[type="time"]::-webkit-calendar-picker-indicator {
   filter: invert(1) brightness(1.2);
   opacity: 0.9;

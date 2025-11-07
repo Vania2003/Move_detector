@@ -1,4 +1,3 @@
-#!/bin/bash
 PI_USER="pi"
 PI_HOST="192.168.0.48"
 PI_PATH="/home/pi/DYPLOM/device/raspberry"

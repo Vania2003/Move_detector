@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import React from "react";
 import { FiBell, FiMonitor, FiClock, FiActivity } from "react-icons/fi";
 import usePolling from "@/hooks/usePolling";
@@ -14,7 +13,6 @@ const Td = ({ children, mono, className }) => (
   <td className={`px-3 py-2 ${mono ? "font-mono text-xs" : ""} ${className || ""}`}>{children}</td>
 );
 
-/* ---------- helpers for pretty table ---------- */
 function parseJSONSafe(text) {
   if (!text || typeof text !== "string") return null;
   try {
@@ -69,13 +67,11 @@ function PayloadPretty({ payload }) {
 
   const uptime = typeof payload.uptime_ms === "number" ? chip(`uptime: ${msToHMS(payload.uptime_ms)}`, "blue") : null;
 
-  // device id, если присутствует
   const dev = payload.device ? chip(payload.device, "slate") : null;
 
-  // остальные ключи (кроме уже показанных)
   const extras = Object.entries(payload)
     .filter(([k]) => !["motion", "uptime_ms", "device"].includes(k))
-    .slice(0, 4) // не спамим
+    .slice(0, 4)
     .map(([k, v]) => chip(`${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`, "violet"));
 
   return (
@@ -89,7 +85,6 @@ function PayloadPretty({ payload }) {
 }
 
 function TopicParts({ topic }) {
-  // ожидаем что-то вроде: iot/eldercare/room1/motion/state
   const parts = typeof topic === "string" ? topic.split("/") : [];
   const room = parts[2] || null;
   const cat = parts[3] || null;
@@ -104,13 +99,11 @@ function TopicParts({ topic }) {
   );
 }
 
-/* ---------------- component ---------------- */
 export default function Dashboard() {
   const [stats, setStats] = React.useState({ alertsOpen: 0, devices: 0, lastMsg: null });
   const [messages, setMessages] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
 
-  // demo-данные для мини-чарта
   const [activity] = React.useState([0.15, 0.35, 0.42, 0.9, 0.7, 0.41, 0.2, 0.8, 0.3, 0.05, 0, 0.01, 0.16, 0.65, 0.5, 0.3, 0.12, 0.36, 0.65, 0.8, 0.47, 0.14, 0.31, 0.5]);
 
   const fetchStats = React.useCallback(async () => {
@@ -134,7 +127,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* KPI */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <KpiCard icon={FiBell} label="Open alerts" value={loading ? "…" : stats.alertsOpen} color="red" hint="Needs attention" />
         <KpiCard icon={FiMonitor} label="Devices" value={loading ? "…" : stats.devices} color="emerald" hint="Connected" />
@@ -149,10 +141,8 @@ export default function Dashboard() {
         </KpiCard>
       </div>
 
-      {/* reserved for heatmap */}
       <div className="hidden md:block pt-4" />
 
-      {/* Latest messages */}
       <section className="space-y-2">
         <h2 className="text-lg font-bold flex items-center gap-2">
           <FiActivity className="text-indigo-400" /> Latest MQTT messages
