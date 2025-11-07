@@ -412,3 +412,47 @@ header nav a.active {
 .dark .no-bright-hover:hover{
   background-color: rgba(34, 197, 94, 0.12) !important; 
 }
+
+.dark .card,
+.dark .detail-card,
+.dark .rounded-2xl {
+  background-color: rgba(24, 24, 27, 0.85) !important;
+  border-color: rgba(63, 63, 70, 0.9) !important;    
+  backdrop-filter: blur(4px);
+}
+
+.dark .bg-white\/70,
+.dark .bg-white\/60 {
+  background-color: rgba(18, 18, 20, 0.85) !important;
+}
+
+.dark .detail-card .label {
+  color: #a1a1aa !important;
+}
+.dark .detail-card .value {
+  color: #fafafa !important;
+}
+
+.dark .recent-events {
+  color: #d1d5db !important; /* светло-серый, как secondary текст */
+}
+.dark .recent-events li {
+  color: #e4e4e7 !important; 
+}
+.dark .recent-events li span {
+  color: #f5f5f5 !important; 
+}
+
+/* === Fix invisible time picker icons in dark mode === */
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.2);
+  opacity: 0.9;
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.2);
+  opacity: 0.9;
+}
+.dark input[type="number"]::-webkit-inner-spin-button,
+.dark input[type="number"]::-webkit-outer-spin-button {
+  filter: invert(0.9);
+}

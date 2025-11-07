@@ -5,7 +5,7 @@
 #define WIFI_PASS     "69Milfs_in_50m"
 
 // ===== MQTT broker (Raspberry Pi) =====
-#define MQTT_HOST     "192.168.0.48"   // IP Raspberry Pi
+#define MQTT_HOST     "10.28.33.84"  // IP Raspberry Pi
 #define MQTT_PORT     1883
 #define MQTT_USER     "iot"
 #define MQTT_PASS     "iot"

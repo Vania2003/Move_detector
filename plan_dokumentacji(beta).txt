@@ -1,0 +1,57 @@
+Szybki szkielet nagłówków (LaTeX/Word)
+
+Wstęp
+
+Cel i zakres pracy
+
+1. Podstawy i przegląd rozwiązań
+
+1.1. Architektura IoT
+
+1.2. Metody monitorowania aktywności
+
+1.3. MQTT i broker
+
+1.4. Prywatność w monitoringu domowym (wariant B rozwija to do osobnego rozdziału)
+
+2. Projekt systemu
+
+2.1. Wymagania
+
+2.2. Architektura i komponenty
+
+2.3. Model danych
+
+2.4. Reguły detekcji
+
+2.5. Interfejs użytkownika
+
+3. Implementacja
+
+3.1. Hardware i firmware ESP
+
+3.2. Logger, Rules-Engine, utrzymanie DB
+
+3.3. API (Flask)
+
+3.4. Frontend (React)
+
+3.5. Symulacja
+
+4. Testy i wyniki
+
+4.1. Scenariusze
+
+4.2. Metryki
+
+4.3. Analiza wyników
+
+5. Bezpieczeństwo i prywatność (wariant B)
+
+6. Użyteczność i dostępność (wariant B)
+
+7. Wdrożenie i utrzymanie (wariant B)
+
+Podsumowanie i kierunki rozwoju
+
+Bibliografia, Spisy, Załączniki

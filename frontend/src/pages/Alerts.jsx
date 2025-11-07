@@ -1,4 +1,3 @@
-// src/pages/Alerts.jsx
 import React from "react";
 import {
   FiFilter, FiBell, FiCheckCircle, FiAlertCircle,
@@ -12,23 +11,30 @@ import Spinner from "@/components/Spinner.jsx";
 import { useToast } from "@/components/Toast.jsx";
 import { timeAgo } from "@/utils/health";
 
+/* ---- options ---- */
 const TYPES = ["All", "INACTIVITY", "DWELL_CRITICAL", "NO_HEARTBEAT", "TEST_ALERT"];
 const STATUSES = ["All", "open", "closed"];
+const AGE_FILTERS = [
+  { key: "all", label: "All time", minutes: null },
+  { key: "24h", label: "Last 24h", minutes: 24*60 },
+  { key: "3d",  label: "Last 3 days", minutes: 3*24*60 },
+  { key: "7d",  label: "Last 7 days", minutes: 7*24*60 },
+  { key: "30d", label: "Last 30 days", minutes: 30*24*60 },
+];
 
-/* ----------------- small UI helpers ----------------- */
-function chip(text, tone = "zinc") {
-  const map =
-    {
-      zinc: "bg-zinc-500/10 border-zinc-600/30 text-zinc-300",
-      indigo: "bg-indigo-500/10 border-indigo-500/30 text-indigo-300",
-      emerald: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
-      red: "bg-red-500/10 border-red-500/30 text-red-300",
-      amber: "bg-amber-500/10 border-amber-500/30 text-amber-300",
-      blue: "bg-blue-500/10 border-blue-500/30 text-blue-300",
-      slate: "bg-slate-500/10 border-slate-500/30 text-slate-300",
-    };
-  return <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${map[tone]}`}>{text}</span>;
+function chip(text, tone = "zinc", key) {
+  const map = {
+    zinc: "bg-zinc-500/10 border-zinc-600/30 text-zinc-300",
+    indigo: "bg-indigo-500/10 border-indigo-500/30 text-indigo-300",
+    emerald: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
+    red: "bg-red-500/10 border-red-500/30 text-red-300",
+    amber: "bg-amber-500/10 border-amber-500/30 text-amber-300",
+    blue: "bg-blue-500/10 border-blue-500/30 text-blue-300",
+    slate: "bg-slate-500/10 border-slate-500/30 text-slate-300",
+  };
+  return <span key={key} className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${map[tone]}`}>{text}</span>;
 }
+
 const Th = ({ children, className }) => <th className={`text-left px-3 py-2 text-zinc-400 ${className||""}`}>{children}</th>;
 const Td = ({ children, mono, className }) => <td className={`px-3 py-2 ${mono?"font-mono text-xs":""} ${className||""}`}>{children}</td>;
 
@@ -46,52 +52,79 @@ function fmtLocal(iso) {
 }
 
 function prettyDetails(a) {
-  // a: alert row (id, type, details, severity, room, device_id, ...)
   const parts = [];
 
+  // стабильная «соль» для ключей (на случай отсутствия id)
+  const baseKey = String(a.id ?? a.ts_utc ?? a.device_id ?? Math.random().toString(36).slice(2));
+
+  const add = (suffix, text, tone = "zinc") => {
+    const map = {
+      zinc: "bg-zinc-500/10 border-zinc-600/30 text-zinc-300",
+      indigo: "bg-indigo-500/10 border-indigo-500/30 text-indigo-300",
+      emerald: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
+      red: "bg-red-500/10 border-red-500/30 text-red-300",
+      amber: "bg-amber-500/10 border-amber-500/30 text-amber-300",
+      blue: "bg-blue-500/10 border-blue-500/30 text-blue-300",
+      slate: "bg-slate-500/10 border-slate-500/30 text-slate-300",
+    };
+    parts.push(
+      <span
+        key={`${baseKey}-${suffix}`}
+        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${map[tone]}`}
+      >
+        {text}
+      </span>
+    );
+  };
+
+  // универсальный парсер длительности: "12 min" или "1800s"
+  const parseDurationToMin = (str) => {
+    if (!str) return null;
+    const m = /([\d.]+)\s*(min|s)\b/i.exec(str);
+    if (!m) return null;
+    const num = parseFloat(m[1]);
+    if (Number.isNaN(num)) return null;
+    const unit = m[2].toLowerCase();
+    return unit === "s" ? Math.round(num / 60) : Math.round(num);
+  };
+
   if (a.type === "INACTIVITY") {
-    // ожидаем строку типа "No motion for 327.3 min"
-    const m = /No motion for ([\d.]+)\s*min/i.exec(a.details || "");
-    if (m) {
-      parts.push(chip(`no motion: ${Math.round(parseFloat(m[1]))}m`, "amber"));
-    } else {
-      parts.push(chip("no motion", "amber"));
-    }
+    const mins = parseDurationToMin(a.details);
+    add("no-mot", `no motion${mins != null ? `: ${mins}m` : ""}`, "amber");
   } else if (a.type === "DWELL_CRITICAL") {
-    // возможный текст: "Dwell in <room> for X min"
-    const m = /(\d+(\.\d+)?)\s*min/i.exec(a.details || "");
-    if (m) parts.push(chip(`dwell: ${Math.round(parseFloat(m[1]))}m`, "red"));
-    else parts.push(chip("dwell", "red"));
+    const mins = parseDurationToMin(a.details);
+    add("dwell", `dwell${mins != null ? `: ${mins}m` : ""}`, "red");
   } else if (a.type === "NO_HEARTBEAT") {
-    const m = /(\d+(\.\d+)?)\s*min/i.exec(a.details || "");
-    if (m) parts.push(chip(`no heartbeat: ${Math.round(parseFloat(m[1]))}m`, "red"));
-    else parts.push(chip("no heartbeat", "red"));
+    const mins = parseDurationToMin(a.details);
+    add("hb", `no heartbeat${mins != null ? `: ${mins}m` : ""}`, "red");
   } else if (a.type === "TEST_ALERT") {
-    parts.push(chip("test", "slate"));
+    add("test", "test", "slate");
   }
 
   if (a.severity) {
     const tone = a.severity === "high" ? "red" : a.severity === "medium" ? "amber" : "zinc";
-    parts.push(chip(`sev: ${a.severity}`, tone));
+    add("sev", `sev: ${a.severity}`, tone);
   }
 
-  // device и любые короткие остатки
-  if (a.device_id) parts.push(chip(a.device_id, "slate"));
+  if (a.device_id) add("dev", a.device_id, "slate");
 
-  // если ничего не получилось распарсить — покажем сырую строку, но мягко
-  if (!parts.length && a.details) parts.push(
-    <span key="raw" className="text-xs text-zinc-400">{a.details}</span>
-  );
+  if (!parts.length && a.details) {
+    parts.push(
+      <span key={`${baseKey}-raw`} className="text-xs text-zinc-400">
+        {a.details}
+      </span>
+    );
+  }
 
   return <div className="flex flex-wrap gap-1.5">{parts}</div>;
 }
 
-/* ===================================================== */
 export default function Alerts() {
   const [items, setItems] = React.useState([]);
   const [status, setStatus] = React.useState("All");
   const [type, setType] = React.useState("All");
   const [roomLike, setRoomLike] = React.useState("");
+  const [ageKey, setAgeKey] = React.useState("7d");
   const [lastMin, setLastMin] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [live, setLive] = React.useState(true);
@@ -126,6 +159,8 @@ export default function Alerts() {
   const ack = async (id) => {
     try {
       await apiPost(`/api/alerts/${id}/ack`, { by: "web" });
+      // «нормальный ACK»: после ack блокируем кнопку (признак — ack_at != null),
+      // перезагружаем список молча
       load({ silent: true });
     } catch {
       toast.push("err", "Ack failed");
@@ -148,21 +183,40 @@ export default function Alerts() {
       toast.push("err", "Bulk close failed");
     }
   };
+  const purgeNow = async () => {
+    // ожидаемый серверный эндпоинт (не обязательный; если 404 — просто проигнорим)
+    try {
+      await apiPost(`/api/alerts/purge?older_than_days=7`);
+      toast.push("ok", "Purged alerts older than 7 days");
+      load({ silent: true });
+    } catch {
+      toast.push("err", "Purge endpoint not available");
+    }
+  };
+
+  // клиентский фильтр по возрасту
+  const ageMinutes = AGE_FILTERS.find(f => f.key === ageKey)?.minutes ?? null;
+  const now = Date.now();
+  const filtered = items.filter(a => {
+    if (!ageMinutes) return true;
+    if (!a.ts_utc) return true;
+    const ts = new Date(a.ts_utc).getTime();
+    return !isNaN(ts) ? (now - ts) <= ageMinutes * 60 * 1000 : true;
+  });
 
   const start = (page - 1) * pageSize;
-  const pageRows = items.slice(start, start + pageSize);
+  const pageRows = filtered.slice(start, start + pageSize);
   const showTableLoading = loading && items.length === 0;
 
   const summary = {
-    open: items.filter(a => a.status === "open").length,
-    INACTIVITY: items.filter(a => a.type === "INACTIVITY").length,
-    DWELL_CRITICAL: items.filter(a => a.type === "DWELL_CRITICAL").length,
-    NO_HEARTBEAT: items.filter(a => a.type === "NO_HEARTBEAT").length
+    open: filtered.filter(a => a.status === "open").length,
+    INACTIVITY: filtered.filter(a => a.type === "INACTIVITY").length,
+    DWELL_CRITICAL: filtered.filter(a => a.type === "DWELL_CRITICAL").length,
+    NO_HEARTBEAT: filtered.filter(a => a.type === "NO_HEARTBEAT").length
   };
 
   function toCSV(rows){
     if(!rows?.length) return "";
-    // экспортируем только полезные колонки
     const pick = r => ({
       id: r.id,
       time: r.ts_utc,
@@ -172,6 +226,8 @@ export default function Alerts() {
       severity: r.severity,
       status: r.status,
       details: r.details,
+      ack_at: r.ack_at,
+      ack_by: r.ack_by
     });
     const data = rows.map(pick);
     const cols = Object.keys(data[0]);
@@ -191,7 +247,7 @@ export default function Alerts() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-xl font-bold flex items-center gap-2"><FiBell className="text-red-400"/> Alerts</h1>
         <div className="flex flex-wrap gap-2 text-sm text-zinc-700 dark:text-zinc-300 font-medium">
-          <span>Open: <b>{summary.open}</b> / Total: <b>{items.length}</b></span>
+          <span>Open: <b>{summary.open}</b> / Total: <b>{filtered.length}</b></span>
           <span>INACTIVITY: <b>{summary.INACTIVITY}</b></span>
           <span>DWELL_CRITICAL: <b>{summary.DWELL_CRITICAL}</b></span>
           <span>NO_HEARTBEAT: <b>{summary.NO_HEARTBEAT}</b></span>
@@ -203,15 +259,25 @@ export default function Alerts() {
         <Filter label="Status" value={status} setValue={setStatus} options={STATUSES} icon={FiFilter}/>
         <Filter label="Type" value={type} setValue={setType} options={TYPES} icon={FiFilter}/>
         <Input label="Room contains" value={roomLike} setValue={setRoomLike}/>
-        <Input label="Last minutes" type="number" value={lastMin} setValue={setLastMin} min={0}/>
+        {/* Клиентская авто-очистка из UI: просто скрываем старое */}
+        <label className="text-sm text-zinc-700 dark:text-zinc-300 flex flex-col gap-1 min-w-[140px]">
+          <span className="text-zinc-400">Hide older than</span>
+          <select
+            className="bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded-md px-3 py-2 text-neutral-900 dark:text-zinc-100"
+            value={ageKey} onChange={e => { setAgeKey(e.target.value); setPage(1); }}>
+            {AGE_FILTERS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+          </select>
+        </label>
+
         <label className="text-sm flex items-center gap-2 ml-2">
           <input type="checkbox" checked={live} onChange={e=>setLive(e.target.checked)}/>
           <span className="text-zinc-400">Live</span>
         </label>
+
         <button onClick={() => { setRefreshing(true); load(); }} className="ghost-btn">
           { refreshing ? <Spinner size={16}/> : <FiRefreshCw size={16}/> } Refresh
         </button>
-        <button onClick={()=>download(`alerts_${Date.now()}.csv`, toCSV(items))} className="ghost-btn">
+        <button onClick={()=>download(`alerts_${Date.now()}.csv`, toCSV(filtered))} className="ghost-btn">
           <FiDownload/> Export CSV
         </button>
         {showBulkClose && (
@@ -220,6 +286,10 @@ export default function Alerts() {
             <FiXCircle/> Close stale NO_HEARTBEAT
           </button>
         )}
+        {/* ручная серверная очистка >7d (если доступен эндпоинт) */}
+        <button onClick={purgeNow} className="ghost-btn">
+          <FiXCircle/> Purge closed 
+        </button>
       </div>
 
       {/* table */}
@@ -227,7 +297,6 @@ export default function Alerts() {
         <table className="min-w-[980px] w-full text-sm">
           <thead className="bg-zinc-100 dark:bg-zinc-900/60">
             <tr>
-              {/* убрали ID и отдельную колонку Ago — время показываем красиво в одной ячейке */}
               <Th>time</Th>
               <Th>room</Th>
               <Th>type</Th>
@@ -265,9 +334,20 @@ export default function Alerts() {
                     <Td><StatusBadge status={a.status}/></Td>
                     <Td>{prettyDetails(a)}</Td>
                     <Td className="text-center" onClick={e => e.stopPropagation()}>
-                      <div className="inline-flex gap-2 justify-center">
-                        <button onClick={() => ack(a.id)} disabled={a.status !== "open"} className="alert-btn alert-btn-ack">Ack</button>
-                        <button onClick={() => close(a.id)} disabled={a.status === "closed"} className="alert-btn alert-btn-close">Close</button>
+                      <div className="inline-flex gap-2">
+                        <button
+                          onClick={() => ack(a.id)}
+                          disabled={a.status !== "open" || !!a.ack_at}
+                          className="alert-btn alert-btn-ack"
+                          title={a.ack_at ? `Acked at ${a.ack_at}` : "Ack"}>
+                          Ack
+                        </button>
+                        <button
+                          onClick={() => close(a.id)}
+                          disabled={a.status === "closed"}
+                          className="alert-btn alert-btn-close">
+                          Close
+                        </button>
                       </div>
                     </Td>
                   </tr>
@@ -279,10 +359,10 @@ export default function Alerts() {
       </div>
 
       <div className="pt-2">
-        <Pagination page={page} pageSize={pageSize} total={items.length} setPage={setPage}/>
+        <Pagination page={page} pageSize={pageSize} total={filtered.length} setPage={setPage}/>
       </div>
 
-      {/* Drawer */}
+      {/* Drawer (по клику на строку) */}
       <Drawer open={!!selected} onClose={() => setSelected(null)} title={selected ? `Alert #${selected.id}` : "Alert"}>
         {selected && (
           <div className="space-y-3">
@@ -315,7 +395,7 @@ export default function Alerts() {
             </div>
 
             <div className="flex gap-2 pt-1">
-              <button onClick={()=>ack(selected.id)} disabled={selected.status!=="open"}
+              <button onClick={()=>ack(selected.id)} disabled={selected.status!=="open" || !!selected.ack_at}
                 className="rounded-md px-3 py-2 text-sm border border-amber-400 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/20">
                 Ack
               </button>

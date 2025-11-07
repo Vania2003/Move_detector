@@ -1,126 +1,189 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include "../include/config.h"
-#include "../include/iot_mqtt_client.h"
+#include <ArduinoJson.h>
 
-#define PIR_PIN D5
-#define PIR_WARMUP_MS 30000 // ignore for the first 30 seconds
-#define EDGE_DEBOUNCE 2000  // anti-bounce
-#define NEED_LOW_MS 3000    // min 3 s LOW before new HIGH
+// ---- ПИНЫ ----
+#define PIR_PIN        D5
+#define LED_PIN        LED_BUILTIN
+#ifndef LED_ACTIVE_LOW
+#define LED_ACTIVE_LOW 1
+#endif
 
-unsigned long bootMs = 0;
-unsigned long lastMotionEdgeMs = 0;
-unsigned long lowSinceMs = 0;
-bool lastMotionLevel = false;
-bool allowNextTrue = true;
+// ---- СЕТЬ / MQTT ----
+const char* WIFI_SSID   = "Samotne kobiety w twojej okolicy";
+const char* WIFI_PASS   = "69Milfs_in_50m";
+const char* MQTT_HOST   = "192.168.0.48";
+const uint16_t MQTT_PORT= 1883;
+const char* MQTT_USER   = "iot";
+const char* MQTT_PASSWD = "iot";
 
+// ---- ОБЩИЕ КОНСТАНТЫ ----
+const char* DEVICE  = "room1";
+const char* BASE    = "iot/eldercare/";
+
+// ---- ОБЪЕКТЫ ----
 WiFiClient espClient;
 PubSubClient mqtt(espClient);
-unsigned long lastHealth = 0;
 
-void publishMotion(bool motion)
-{
-  char msg[96];
-  snprintf(msg, sizeof(msg),
-           "{\"device\":\"%s\",\"motion\":%s}",
-           DEVICE_ID, motion ? "true" : "false");
-  mqtt.publish(TOPIC_STATE, msg);
-  Serial.printf("MQTT sent: %s -> %s\n", TOPIC_STATE, msg);
-  digitalWrite(LED_BUILTIN, motion ? LOW : HIGH);
+// ---- СОСТОЯНИЕ ----
+unsigned long lastMotionMs = 0;
+bool motionState = false;
+bool prealertActive = false;
+unsigned long prealertEndMs = 0;
+const unsigned long BLINK_PERIOD = 400; // мигание 2.5 Гц
+unsigned long blinkMs = 0;
+
+// ======================================================
+// -----------------  УТИЛИТЫ  ---------------------------
+// ======================================================
+inline void ledWriteRaw(bool on) {
+  digitalWrite(LED_PIN, LED_ACTIVE_LOW ? (on ? LOW : HIGH) : (on ? HIGH : LOW));
+}
+inline void ledSet(bool on) { ledWriteRaw(on); }
+
+void publishJson(const String& topic, JsonDocument& doc) {
+  char buf[256];
+  size_t n = serializeJson(doc, buf, sizeof(buf));
+  mqtt.publish(topic.c_str(), buf, n);
 }
 
-void handlePir(unsigned long now)
-{
-  if (now - bootMs < PIR_WARMUP_MS)
-  {
-    static unsigned long lastNote = 0;
-    if (now - lastNote > 5000)
-    {
-      Serial.println("PIR warmup...");
-      lastNote = now;
+// ---- Публикация состояния движения ----
+void sendMotion(bool m) {
+  StaticJsonDocument<128> doc;
+  doc["motion"] = m;
+  doc["ts"] = (uint32_t)(millis() / 1000);
+  String topic = String(BASE) + DEVICE + "/motion/state";
+  publishJson(topic, doc);
+  Serial.printf("[PIR] motion=%d\n", m);
+}
+
+// ======================================================
+// -----------------  MQTT CALLBACK ----------------------
+// ======================================================
+void startPrealert();
+void stopPrealert();
+
+String cmdTopic() { return String(BASE) + DEVICE + "/cmd/prealert"; }
+
+void onMqtt(char* topic, byte* payload, unsigned int len) {
+  StaticJsonDocument<256> doc;
+  if (deserializeJson(doc, payload, len)) return;
+
+  Serial.printf("[MQTT] Received → %s %s\n", topic, (const char*)payload);
+
+  if (String(topic) == cmdTopic()) {
+    const char* action = doc["action"] | "";
+    if (!strcmp(action, "start")) {
+      startPrealert();
+    } else if (!strcmp(action, "stop")) {
+      stopPrealert();
     }
+  }
+}
+
+
+// ======================================================
+// -----------------  MQTT CONNECT -----------------------
+// ======================================================
+void ensureMqtt() {
+  while (!mqtt.connected()) {
+    String cid = "esp8266-" + String(ESP.getChipId(), HEX);
+    Serial.printf("[MQTT] Connecting as %s...\n", cid.c_str());
+    if (mqtt.connect(cid.c_str(), MQTT_USER, MQTT_PASSWD)) {
+      Serial.println("[MQTT] Connected!");
+      mqtt.subscribe(cmdTopic().c_str(), 0);
+      Serial.printf("[MQTT] Subscribed to %s\n", cmdTopic().c_str());
+    } else {
+      Serial.printf("[MQTT] failed rc=%d, retrying...\n", mqtt.state());
+      delay(2000);
+    }
+  }
+}
+
+void startPrealert() {
+  prealertActive = true;
+  prealertEndMs = millis() + 5000;  // по умолчанию 5 секунд, можно обновлять TTL позже
+  blinkMs = 0;
+  Serial.println("[PREALERT] started (LED blinking)");
+}
+
+void stopPrealert() {
+  prealertActive = false;
+  ledSet(false);
+  Serial.println("[PREALERT] stopped");
+}
+
+void handlePrealertBlink() {
+  if (!prealertActive) return;
+  if (millis() > prealertEndMs) {
+    stopPrealert();
     return;
   }
-
-  bool level = digitalRead(PIR_PIN);
-
-  if (!level)
-  {
-    if (lowSinceMs == 0)
-      lowSinceMs = now;
-    if (now - lowSinceMs >= NEED_LOW_MS)
-      allowNextTrue = true;
-  }
-  else
-  {
-    lowSinceMs = 0;
-  }
-
-  if (level != lastMotionLevel && (now - lastMotionEdgeMs) > EDGE_DEBOUNCE)
-  {
-    lastMotionEdgeMs = now;
-    if (level)
-    {
-      if (allowNextTrue)
-      {
-        publishMotion(true);
-        allowNextTrue = false;
-      }
-      else
-      {
-        Serial.println("PIR: HIGH ignored (waiting stable LOW)");
-      }
-    }
-    else
-    {
-      publishMotion(false);
-    }
-    lastMotionLevel = level;
+  if (millis() - blinkMs >= BLINK_PERIOD) {
+    blinkMs = millis();
+    bool current = (digitalRead(LED_PIN) == (LED_ACTIVE_LOW ? LOW : HIGH));
+    ledWriteRaw(!current);
   }
 }
 
-void setup()
-{
+// ======================================================
+// -----------------  SETUP ------------------------------
+// ======================================================
+void setup() {
   Serial.begin(115200);
-  pinMode(LED_BUILTIN, OUTPUT);
+  delay(200);
+  Serial.println("\n=== ESP8266 NodeMCU Prealert Firmware ===");
+
   pinMode(PIR_PIN, INPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
-  bootMs = millis();
+  pinMode(LED_PIN, OUTPUT);
+  ledSet(false);
 
-  wifiEnsure(WIFI_SSID, WIFI_PASS);
-  mqttEnsure(mqtt, MQTT_HOST, MQTT_PORT, DEVICE_ID, MQTT_USER, MQTT_PASS);
+  Serial.printf("[WiFi] Connecting to %s ...\n", WIFI_SSID);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  uint8_t attempts = 0;
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    if (++attempts > 60) {
+      Serial.println("\n[WiFi] Timeout! Restarting...");
+      ESP.restart();
+    }
+  }
+  Serial.printf("\n[WiFi] Connected! IP=%s\n", WiFi.localIP().toString().c_str());
 
-  char msg[128];
-  snprintf(msg, sizeof(msg),
-           "{\"device\":\"%s\",\"boot\":true,\"ip\":\"%s\"}",
-           DEVICE_ID, WiFi.localIP().toString().c_str());
-  mqtt.publish(TOPIC_HEALTH, msg, true);
-  Serial.println("Device boot message sent.");
+  mqtt.setServer(MQTT_HOST, MQTT_PORT);
+  mqtt.setCallback(onMqtt);
+  mqtt.subscribe(cmdTopic().c_str(), 0);
+  ensureMqtt();
+
+  lastMotionMs = millis();
+  Serial.println("[INIT] Ready.");
 }
 
-void loop()
-{
-  wifiEnsure(WIFI_SSID, WIFI_PASS);
-  mqttEnsure(mqtt, MQTT_HOST, MQTT_PORT, DEVICE_ID, MQTT_USER, MQTT_PASS);
+// ======================================================
+// -----------------  LOOP -------------------------------
+// ======================================================
+void loop() {
+  if (!mqtt.connected()) ensureMqtt();
   mqtt.loop();
+  handlePrealertBlink();
 
-  unsigned long now = millis();
+  bool pir = digitalRead(PIR_PIN) == HIGH;
 
-  if (now - lastHealth > 5000)
-  {
-    lastHealth = now;
-    char hb[96];
-    snprintf(hb, sizeof(hb),
-             "{\"device\":\"%s\",\"uptime_ms\":%lu}",
-             DEVICE_ID, now);
-    mqtt.publish(TOPIC_HEALTH, hb);
-    Serial.println(hb);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(80);
-    digitalWrite(LED_BUILTIN, HIGH);
+  // === изменение состояния PIR ===
+  if (pir != motionState) {
+    motionState = pir;
+    sendMotion(pir);            // только публикация в MQTT
+    lastMotionMs = millis();
   }
 
-  handlePir(now);
-  delay(50);
+  // === Live debug ===
+  static unsigned long dbgMs = 0;
+  if (millis() - dbgMs >= 500) {
+    dbgMs = millis();
+    int raw = digitalRead(PIR_PIN);
+    Serial.printf("[DEBUG] PIR raw=%d (motionState=%d)\n", raw, motionState);
+  }
 }
