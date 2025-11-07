@@ -1,0 +1,22 @@
+{
+  "default": {
+    "inactivity_sec": 1800,
+    "prealert_offset_sec": 300,
+    "enabled": true,
+    "night_block": false,
+    "night_window": {
+      "from": "23:00",
+      "to": "07:00"
+    }
+  },
+  "room1": {
+    "inactivity_sec": 60,
+    "prealert_offset_sec": 20,
+    "enabled": false,
+    "night_block": true,
+    "night_window": {
+      "from": "23:00",
+      "to": "07:00"
+    }
+  }
+}

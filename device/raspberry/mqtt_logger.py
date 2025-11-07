@@ -42,17 +42,17 @@ def init_db_minimal():
 def upsert_device_and_room(conn, topic, device_id):
     m = re.match(r"^iot/eldercare/([^/]+)/", topic)
     room_name = m.group(1) if m else None
+    if not device_id or not room_name:
+        return
     cur = conn.cursor()
-    room_id = None
-    if room_name:
-        cur.execute("INSERT OR IGNORE INTO rooms(name) VALUES(?)", (room_name,))
-        cur.execute("SELECT id FROM rooms WHERE name=?", (room_name,))
-        row = cur.fetchone()
-        room_id = row[0] if row else None
-    if device_id:
-        cur.execute("INSERT OR IGNORE INTO devices(device_id, room_id) VALUES(?,?)",
-                    (device_id, room_id))
+    cur.execute("INSERT OR IGNORE INTO rooms(name) VALUES(?)", (room_name,))
+    cur.execute("""
+        INSERT INTO devices(device_id, room)
+        VALUES(?, ?)
+        ON CONFLICT(device_id) DO UPDATE SET room=excluded.room
+    """, (device_id, room_name))
     conn.commit()
+
 
 def insert_raw(conn, ts_utc, topic, device_id, payload):
     conn.execute(
@@ -82,7 +82,7 @@ def on_message(client, userdata, msg):
     ts_utc = utc_now_naive_iso()
     payload_str = msg.payload.decode("utf-8", "ignore")
     topic = msg.topic
-    print(topic, "=>", payload_str)
+    print(f"[MQTT] {topic} => {payload_str}")
 
     device_id = None
     try:
@@ -101,18 +101,35 @@ def on_message(client, userdata, msg):
             if dev:
                 upsert_device_and_room(conn, topic, dev)
                 insert_hb(conn, ts_utc, dev, data.get("ip"), data.get("uptime_ms"))
+                print(f"[LOGGER] heartbeat from {dev}")
 
         elif topic.endswith("/motion/state") and isinstance(data, dict):
             dev = data.get("device")
-            if dev is not None and "motion" in data:
+            if not dev:
+                parts = topic.split("/")
+                if len(parts) >= 3:
+                    dev = parts[2]
+
+            if dev:
                 upsert_device_and_room(conn, topic, dev)
-                insert_motion(conn, ts_utc, dev, 1 if bool(data["motion"]) else 0)
+                motion_raw = data.get("motion")
+
+                if isinstance(motion_raw, bool):
+                    motion = 1 if motion_raw else 0
+                elif isinstance(motion_raw, str):
+                    motion = 1 if motion_raw.lower() in ("1", "true", "on") else 0
+                else:
+                    motion = int(motion_raw) if motion_raw is not None else 0
+
+                insert_motion(conn, ts_utc, dev, motion)
+                print(f"[LOGGER] motion_event inserted: dev={dev}, motion={motion}")
 
         conn.commit()
     except Exception as e:
-        print("DB error:", e)
+        print("[LOGGER] DB error:", e)
     finally:
         conn.close()
+
 
 def main():
     if not os.path.exists(DB_PATH):

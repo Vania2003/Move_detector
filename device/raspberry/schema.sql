@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS devices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   device_id TEXT UNIQUE NOT NULL,
   room_id INTEGER REFERENCES rooms(id),
+  room TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS messages_raw (
 CREATE INDEX IF NOT EXISTS idx_raw_ts ON messages_raw(ts_utc);
 CREATE INDEX IF NOT EXISTS idx_raw_topic ON messages_raw(topic);
 CREATE INDEX IF NOT EXISTS idx_raw_dev_ts ON messages_raw(device_id, ts_utc);
+CREATE INDEX IF NOT EXISTS idx_devices_room on devices(room);
 
 CREATE TABLE IF NOT EXISTS heartbeats (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,6 +64,7 @@ CREATE TABLE IF NOT EXISTS daily_stats (
   PRIMARY KEY (day, device_id, metric)
 );
 
+-- === Alerts extensions ===
 ALTER TABLE alerts ADD COLUMN created_at TEXT;
 ALTER TABLE alerts ADD COLUMN closed_at TEXT;
 ALTER TABLE alerts ADD COLUMN ack_at TEXT;
@@ -71,8 +74,10 @@ ALTER TABLE alerts ADD COLUMN channels TEXT;
 ALTER TABLE alerts ADD COLUMN rule TEXT;
 ALTER TABLE alerts ADD COLUMN params TEXT;
 
+-- Заполним created_at для существующих строк
 UPDATE alerts SET created_at = datetime('now') WHERE created_at IS NULL;
 
+-- === Rule settings ===
 CREATE TABLE IF NOT EXISTS rule_settings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key TEXT UNIQUE NOT NULL,
@@ -90,6 +95,7 @@ INSERT OR IGNORE INTO rule_settings (key, value) VALUES
 ('dwell.kitchen_min', '45'),
 ('dwell.gap_min', '5');
 
+-- === Notifications log ===
 CREATE TABLE IF NOT EXISTS notifications_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     alert_id INTEGER,
