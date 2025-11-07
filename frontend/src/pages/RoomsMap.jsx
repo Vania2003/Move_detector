@@ -1,14 +1,6 @@
+// src/pages/RoomsMap.jsx
 import React from "react";
 import { FiActivity, FiMapPin } from "react-icons/fi";
-
-const MOCK_EVENTS = {
-  bedroom: [
-    { ts: "22:31:41", text: "Motion" },
-    { ts: "21:54:03", text: "Motion" },
-    { ts: "20:12:18", text: "Motion" },
-  ],
-  kitchen: [{ ts: "19:43:10", text: "Motion" }],
-};
 
 function LegendItem({ colorClass, label }) {
   return (
@@ -25,14 +17,31 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
   const [active, setActive] = React.useState(null);
 
   React.useEffect(() => {
-    // Загрузка списка комнат
-    fetch("/api/rooms")
+    // Загружаем комнаты
+    fetch("http://192.168.0.48:5000/api/rooms", {
+      headers: { "X-API-Key": "iotkey" },
+    })
       .then((res) => res.json())
-      .then((data) => setRooms(data))
+      .then((data) => {
+        const mapped = data
+          .filter((r) => r.room)
+          .map((r, i) => ({
+            key: r.room.toLowerCase().replace(/\s/g, "_"),
+            name: r.room,
+            motionsToday: 0,
+            x: 40 + (i % 2) * 150,
+            y: 40 + Math.floor(i / 2) * 100,
+            w: 120,
+            h: 70,
+          }));
+        setRooms(mapped);
+      })
       .catch((err) => console.error("Failed to fetch rooms:", err));
 
-    // Загрузка событий
-    fetch("/api/events/recent")
+    // Загружаем события
+    fetch("http://192.168.0.48:5000/api/events/recent", {
+      headers: { "X-API-Key": "iotkey" },
+    })
       .then((res) => res.json())
       .then((data) => setEventsByRoom(data))
       .catch(() => {});
@@ -45,10 +54,10 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
       {/* Карта */}
       <div className="card relative overflow-hidden">
         <div
-          className="absolute inset-0 opacity-[0.12] dark:opacity-20 pointer-events-none"
+          className="absolute inset-0 opacity-[0.08] dark:opacity-15 pointer-events-none"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 1px 1px, rgba(99,102,241,.65) 1px, transparent 0)",
+              "radial-gradient(circle at 1px 1px, rgba(99,102,241,.5) 1px, transparent 0)",
             backgroundSize: "22px 22px",
           }}
         />
@@ -57,30 +66,19 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
           {title}
         </div>
 
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/60 backdrop-blur p-3">
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/50 backdrop-blur p-3">
           <svg
-            viewBox="0 0 320 190"
-            className="w-full h-[260px] sm:h-[300px]"
+            viewBox={`0 0 400 ${Math.ceil(rooms.length / 2) * 100 + 60}`}
+            className="w-full h-auto min-h-[280px]"
             aria-label="Rooms scheme"
           >
-            <defs>
-              <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.25" />
-              </filter>
-              <linearGradient id="activeStroke" x1="0" x2="1">
-                <stop offset="0%" stopColor="#818CF8" />
-                <stop offset="100%" stopColor="#22D3EE" />
-              </linearGradient>
-            </defs>
-
-            {rooms.map((r) => {
+            {rooms.map((r, i) => {
               const isActive = active === r.key;
-              const motionColor =
-                r.motionsToday > 5
-                  ? "#22c55e"
-                  : r.motionsToday > 0
-                  ? "#84cc16"
-                  : "#9ca3af";
+              const motionCount = eventsByRoom[r.key]?.length || r.motionsToday || 0;
+
+              // рассчитываем координаты динамически
+              const x = 40 + (i % 2) * 160;
+              const y = 20 + Math.floor(i / 2) * 90;
 
               return (
                 <g
@@ -91,98 +89,104 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
                     setActive(r.key);
                     onSelect?.(r.key);
                   }}
-                  style={{ cursor: "pointer", transition: "all .25s ease" }}
+                  style={{
+                    cursor: "pointer",
+                    transition: "all .25s ease",
+                  }}
                 >
-                  {isActive && (
-                    <rect
-                      x={r.x - 5}
-                      y={r.y - 5}
-                      width={r.w + 10}
-                      height={r.h + 10}
-                      rx={16}
-                      fill="url(#activeStroke)"
-                      opacity="0.15"
-                    />
-                  )}
+                  {/* фон плитки */}
                   <rect
-                    x={r.x}
-                    y={r.y}
+                    x={x}
+                    y={y}
                     width={r.w}
                     height={r.h}
-                    rx={14}
-                    fill={`url(#grad-${r.key})`}
-                    stroke={isActive ? "url(#activeStroke)" : "rgba(82,82,91,0.7)"}
-                    strokeWidth={isActive ? 2.5 : 1.2}
-                    filter="drop-shadow(0 2px 4px rgba(0,0,0,0.35))"
-                    style={{ transition: "all .3s ease" }}
+                    rx={16}
+                    fill={isActive ? "url(#gradActive)" : "url(#gradNeutral)"}
+                    stroke={
+                      isActive
+                        ? "url(#strokeActive)"
+                        : "rgba(255,255,255,0.08)"
+                    }
+                    strokeWidth={isActive ? 3 : 1.2}
+                    style={{
+                      filter: isActive
+                        ? "drop-shadow(0 0 8px rgba(99,102,241,0.45))"
+                        : "drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
+                    }}
                   />
-                  <defs>
-                    <linearGradient id={`grad-${r.key}`} x1="0" x2="1" y1="0" y2="1">
-                      <stop offset="0%" stopColor={r.color} />
-                      <stop offset="100%" stopColor="#ffffff15" />
-                    </linearGradient>
-                  </defs>
 
+                  {/* название комнаты */}
                   <text
-                    x={r.x + r.w / 2}
-                    y={r.y + r.h / 2 - 2}
+                    x={x + r.w / 2}
+                    y={y + r.h / 2 + 4}
                     alignmentBaseline="middle"
                     textAnchor="middle"
                     fontWeight="700"
                     fontSize="15"
-                    fill="#111"
+                    fill="#e5e7eb"
                     style={{
                       pointerEvents: "none",
                       userSelect: "none",
-                      filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))",
                     }}
                   >
                     {r.name}
                   </text>
 
-                  <g transform={`translate(${r.x + r.w - 12}, ${r.y + 14})`}>
-                    <circle r="10" fill={motionColor} opacity="0.15" />
+                  {/* кружок с цифрой */}
+                  <g transform={`translate(${x + r.w - 12}, ${y + 14})`}>
+                    <circle r="10" fill="#3b82f6" opacity="0.25" />
                     <text
                       fontSize="11"
                       fontWeight="700"
                       textAnchor="middle"
                       alignmentBaseline="middle"
-                      fill={motionColor}
+                      fill="#60a5fa"
                     >
-                      {r.motionsToday}
+                      {motionCount}
                     </text>
                   </g>
                 </g>
               );
             })}
+
+            {/* Градиенты */}
+            <defs>
+              <linearGradient id="gradNeutral" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stopColor="#27272a" />
+                <stop offset="100%" stopColor="#18181b" />
+              </linearGradient>
+              <linearGradient id="gradActive" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stopColor="#4f46e5" />
+                <stop offset="100%" stopColor="#0ea5e9" />
+              </linearGradient>
+              <linearGradient id="strokeActive" x1="0" x2="1">
+                <stop offset="0%" stopColor="#818cf8" />
+                <stop offset="100%" stopColor="#22d3ee" />
+              </linearGradient>
+            </defs>
           </svg>
 
-          <div className="mt-3 flex items-center gap-4">
-            <LegendItem colorClass="bg-indigo-500" label="Selected room" />
-            <LegendItem colorClass="bg-emerald-500" label="Motions count" />
+
+          <div className="mt-3 flex items-center gap-4 text-xs text-zinc-400">
+            <LegendItem colorClass="bg-blue-500/30" label="Motions today" />
+            <LegendItem colorClass="bg-indigo-500/40" label="Selected room" />
           </div>
         </div>
       </div>
 
-      {/* Правая панель с деталями */}
+      {/* Панель справа */}
       <div className="space-y-3">
-        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/60 backdrop-blur p-4">
+        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/50 backdrop-blur p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200">
             <FiMapPin className="text-indigo-400" />
             {activeRoom ? activeRoom.name : "Select a room"}
           </div>
 
-          <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="mt-2 grid grid-cols-1 gap-2">
             <div className="detail-card">
               <div className="label">Motions today</div>
               <div className="value">
                 {activeRoom ? activeRoom.motionsToday : "—"}
-              </div>
-            </div>
-            <div className="detail-card">
-              <div className="label">Status</div>
-              <div className="value">
-                {activeRoom ? (activeRoom.active ? "Active" : "Idle") : "—"}
               </div>
             </div>
           </div>
@@ -194,24 +198,26 @@ export default function RoomsMap({ onSelect, title = "Rooms activity" }) {
           )}
         </div>
 
-        {/* Недавние события */}
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 recent-events">
-          <div className="text-sm font-semibold text-zinc-300 mb-2">
+        {/* События */}
+        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/50 backdrop-blur p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200">
             Recent events
           </div>
           {activeRoom ? (
             <ul className="list-disc ml-5 text-sm text-zinc-700 dark:text-zinc-300">
-              {(eventsByRoom[activeRoom.key] || []).map((e, i) => (
+            {(eventsByRoom[activeRoom.key] || []).map((e, i) => {
+              const formattedTs = e.ts?.replace("T", " ") || e.ts; // убираем "T"
+              return (
                 <li key={i}>
-                  <span className="font-medium">{e.text}</span> at {e.ts}
+                  <span className="font-medium">{e.text}</span> at {formattedTs}
                 </li>
-              ))}
-              {!(eventsByRoom[activeRoom.key] || []).length && (
-                <li className="text-zinc-500">No recent events.</li>
-              )}
-            </ul>
+              );
+            })}
+          </ul>
           ) : (
-            <div className="text-xs text-zinc-500">Pick a room to see the feed.</div>
+            <div className="text-xs text-zinc-500">
+              Pick a room to see the feed.
+            </div>
           )}
         </div>
       </div>
